@@ -28,35 +28,35 @@ const Chat = () => {
         connectTOWs();
     }, [selectedUser]);
 
-/*     function connnectTOWs() {
-        const ws = new WebSocket('ws://localhost:4000');
-        setws(ws);
-        ws.addEventListener('message', handlemessage);
-        ws.addEventListener('close', () => {
-            setTimeout(() => {
-                connnectTOWs();
-            }, 1000);
-        });
-    } */
+    /*     function connnectTOWs() {
+            const ws = new WebSocket('ws://localhost:4000');
+            setws(ws);
+            ws.addEventListener('message', handlemessage);
+            ws.addEventListener('close', () => {
+                setTimeout(() => {
+                    connnectTOWs();
+                }, 1000);
+            });
+        } */
     function connectTOWs() {
         const serverUrl = import.meta.env.VITE_WS_SERVER_URL;
         const ws = new WebSocket(serverUrl);
         setws(ws);
-      
+
         ws.addEventListener('message', handlemessage);
         ws.addEventListener('close', () => {
-          setTimeout(() => {
-            console.log('trying to reconnect');
-            connectTOWs();
-          }, 1000);
+            setTimeout(() => {
+                console.log('trying to reconnect');
+                connectTOWs();
+            }, 1000);
         });
-      }
-      
-      
-      
-      
-      
-      
+    }
+
+
+
+
+
+
     function showOnlinePeople(peopleArray) {
         const people = {};
         peopleArray.forEach(({ userId, username }) => {
@@ -90,8 +90,8 @@ const Chat = () => {
         if (typeof messageData === 'object' && 'online' in messageData) {
             showOnlinePeople(messageData.online);
         } else if ('text' in messageData) {
-/*             console.log(messageData);
- */        /*  setMessages(prev => ([...prev, { text: messageData.text, isOur: false }])); */
+            /*             console.log(messageData);
+             */        /*  setMessages(prev => ([...prev, { text: messageData.text, isOur: false }])); */
             if (messageData.sender === selectedUser) {
                 setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
 
@@ -252,11 +252,23 @@ const Chat = () => {
                                             <div className="inline-block font-sans text-lg ">
                                                 {message.text}
                                                 {message.file && (
-                                                    <div className="underline cursor-pointer">
-                                                        <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file}>
-                                                            {message.file}</a>
-                                                    </div>
+                                                    <div className="">
 
+
+                                                        {/*    <div className="underline cursor-pointer">
+                                                            <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file}>
+                                                            {message.file}
+                                                            </a>
+                                                        </div> */}
+                                                        <div className="underline cursor-pointer">
+                                                            <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file}>
+                                                                <img className='h-64 w-64 m-0 p-0 rounded-2xl '
+                                                                    src={axios.defaults.baseURL + 'uploads/' + message.file}></img>
+                                                                <div> {message.file}   </div>
+
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 )}
 
 
