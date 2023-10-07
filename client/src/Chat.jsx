@@ -253,7 +253,7 @@ const Chat = () => {
                                                 {message.text}
                                                 {message.file && (
                                                     <div className="underline cursor-pointer">
-                                                        <a target='_blank' href={axios.defaults.baseURL + '/uploads/' + message.file}>
+                                                        <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file}>
                                                             {message.file}</a>
                                                     </div>
 
