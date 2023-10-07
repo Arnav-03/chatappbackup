@@ -21,7 +21,7 @@ const bcryptSalt = bcrypt.genSaltSync(10);
  */
 const app = express();
 
-app.use('/uploads',express.static(__dirname+'/uploads/'));
+app.use('/api/uploads',express.static(__dirname+'/uploads/'));
 console.log(process.env.CLIENT_URL);
 const corsOptions = {
     credentials: true,
