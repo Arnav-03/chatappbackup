@@ -45,7 +45,14 @@ const Chat = () => {
             });
             setonlinePeople(people);
         } */
+        const [peopleWithLastMessage, setPeopleWithLastMessage] = useState({});
 
+        function updatePeopleLastMessage(userId, timestamp) {
+            setPeopleWithLastMessage(prevPeople => ({
+                ...prevPeople,
+                [userId]: timestamp,
+            }));
+        }
 
     useEffect(() => {
         axios.get('/people').then(res => {
@@ -209,7 +216,6 @@ const Chat = () => {
         return () => clearInterval(interval); // Clean up the interval on component unmount
     }, []);
 
-    
     return (
 
         <div className='flex h-screen'>
@@ -279,7 +285,9 @@ const Chat = () => {
                     ))}
                 </div>
 
-                
+
+
+
                 <div className="p-1 mt-4 text-center border-t-2 border-cyan-900 ">
                     <button onClick={logout}
                         className='bg-cyan-600  text-white font-bold p-2 rounded-lg'>Logout</button>

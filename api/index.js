@@ -17,12 +17,12 @@ mongoose.connect(process.env.MONGO_URL);
 
 const jwtSecret = process.env.JWT_SECRET;
 const bcryptSalt = bcrypt.genSaltSync(10);
-/* console.log(process.env.JWT_SECRET);
- */
 const app = express();
 
-app.use('/api/uploads',express.static(__dirname+'/uploads/'));
+app.use('/api/uploads', express.static(__dirname + '/uploads/'));
+
 console.log(process.env.CLIENT_URL);
+
 const corsOptions = {
     credentials: true,
     origin: process.env.CLIENT_URL,
@@ -40,35 +40,108 @@ async function getUserDataFromRequest(req) {
                 if (err) throw err;
                 resolve(userData);
             });
-        }else{
+        } else {
             reject('no token');
         }
     })
 
 }
 
-/* console.log(process.env.CLIENT_URL);
- */app.get('/api/test', (req, res) => {
+app.get('/api/test', (req, res) => {
     res.json('test hehhee');
 });
 
 app.get('/api/messages/:userId', async (req, res) => {
     const { userId } = req.params;
-    const userData= await getUserDataFromRequest(req);
-    const ourUSerId  = userData.userId;
-    const messages= await Message.find({
-        sender:{$in:[userId,ourUSerId]},
-        recipient:{$in:[userId,ourUSerId]},
-    }).sort({createdAt:1});
+    const userData = await getUserDataFromRequest(req);
+    const ourUSerId = userData.userId;
+    const messages = await Message.find({
+        sender: { $in: [userId, ourUSerId] },
+        recipient: { $in: [userId, ourUSerId] },
+    }).sort({ createdAt: 1 });
     res.json(messages);
 
 });
 
 
-app.get('/api/people', async (req,res)=>{
+/* app.get('/api/people', async (req,res)=>{
     const users = await User.find({},{'_id':1,'username':1});
     res.json(users);
-})
+}) */
+app.get('/api/people', async (req, res) => {
+    try {
+        const userData = await getUserDataFromRequest(req);
+        const ourUserId = userData.userId;
+
+        const messagesSentByUser = await Message.find({ sender: ourUserId }, { recipient: 1, createdAt: 1 })
+            .sort({ createdAt: -1 }); // Sorting by createdAt in descending order
+
+        const messagesReceivedByUser = await Message.find({ recipient: ourUserId }, { sender: 1, createdAt: 1 })
+            .sort({ createdAt: -1 }); // Sorting by createdAt in descending order
+
+        const usersSentTo = messagesSentByUser.map(message => message.recipient.toString());
+        const usersReceivedFrom = messagesReceivedByUser.map(message => message.sender.toString());
+
+        // Combine and deduplicate the user IDs
+        const uniqueUserIds = [...new Set([...usersSentTo, ...usersReceivedFrom])];
+
+        // Fetch user details for the unique user IDs
+        const users = await User.find({ _id: { $in: uniqueUserIds } }, { _id: 1, username: 1 });
+
+        // Sort the users based on interaction timestamp (latest to oldest)
+        const usersSortedByTime = users.sort((a, b) => {
+            const lastInteractionTimeA = Math.max(
+                messagesSentByUser.find(msg => msg.recipient.toString() === a._id.toString())?.createdAt || 0,
+                messagesReceivedByUser.find(msg => msg.sender.toString() === a._id.toString())?.createdAt || 0
+            );
+
+            const lastInteractionTimeB = Math.max(
+                messagesSentByUser.find(msg => msg.recipient.toString() === b._id.toString())?.createdAt || 0,
+                messagesReceivedByUser.find(msg => msg.sender.toString() === b._id.toString())?.createdAt || 0
+            );
+
+            return lastInteractionTimeB - lastInteractionTimeA;
+        });
+
+        res.json(usersSortedByTime);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+
+app.get('/api/allpeople', async (req, res) => {
+    const searchTerm = req.query.searchTerm;
+
+    try {
+        if (searchTerm && searchTerm.length > 0) {
+            // Use a regular expression to perform a case-insensitive search for starting letters only
+            const users = await User.find(
+                { username: { $regex: new RegExp('^' + searchTerm, 'i') } },
+                { _id: 1, username: 1 }
+            );
+
+            if (users.length > 0) {
+                // Users matching the search term found
+                res.json({ exists: true, users });
+            } else {
+                // No matching users found
+                res.json({ exists: false, users: [] });
+            }
+        } else {
+            // No search term provided
+            res.json({ exists: false, users: [] });
+        }
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+
+
 
 app.get('/api/profile', (req, res) => {
     const token = req.cookies?.token;
@@ -99,7 +172,7 @@ app.post('/api/login', async (req, res) => {
 
 
 app.post('/api/logout', (req, res) => {
-    
+
     res.cookie('token', '', { sameSite: 'none', secure: true }).json('logout');
 });
 
@@ -124,6 +197,11 @@ app.post('/api/register', async (req, res) => {
     }
 
 });
+
+
+
+
+
 const server = app.listen(4040);
 
 
@@ -132,47 +210,29 @@ const server = app.listen(4040);
 const wss = new ws.WebSocketServer({ server });
 wss.on('connection', (connection, req) => {
 
-    function messageAboutOnlinePeople(){
+    function messageAboutOnlinePeople() {
         [...wss.clients].forEach(client => {
             client.send(JSON.stringify({
                 online: [...wss.clients].map(c => ({ userId: c.userId, username: c.username }))
-    
+
             }
             ));
         });
-    
+
     }
-/* 
-    connection.isAlive = true;
-    connection.timer = setInterval(()=>{
-        connection.ping();
 
-        connection.deathTimer = setTimeout(()=>{
-            connection.isAlive = false;
-            clearInterval(connection.timer);
-            connection.terminate();
-            messageAboutOnlinePeople();
-      },0.5)
-      
-
-
-    },5000); */
-
-    connection.on('pong',()=>{
-/*         console.log('pong');
- */    });
+    connection.on('pong', () => {
+    });
 
     const cookies = req.headers.cookie;
     if (cookies) {
         const tokencookieString = cookies.split(';').find(str => str.startsWith('token='));
-/*         console.log(tokencookieString);
- */        if (tokencookieString) {
+        if (tokencookieString) {
             const token = tokencookieString.split('=')[1];
             if (token) {
                 jwt.verify(token, jwtSecret, {}, (err, userData) => {
                     if (err) throw err;
-/*                     console.log(userData);
- */                    const { userId, username } = userData;
+                    const { userId, username } = userData;
                     connection.userId = userId;
                     connection.username = username;
 
@@ -183,18 +243,19 @@ wss.on('connection', (connection, req) => {
 
     connection.on('message', async (message) => {
         const messageData = JSON.parse(message.toString());
-/*         console.log(messageData);
- */        const { recipient, text,file } = messageData;
-        let filename =null;
-     
-        if(file){
+        const { recipient, text, file } = messageData;
+        let filename = null;
+
+        if (file) {
             const parts = file.name.split('.');
-            const ext = parts[parts.length-1];
-             filename = Date.now()+'.'+ext;
-            const path = __dirname + '/uploads/' + filename;
-            const bufferData = new Buffer(file.data.split(',')[1],'base64');
-            fs.writeFile(path,bufferData, ()=>{
-                console.log('file saved '+path);
+            const ext = parts[parts.length - 1];
+            filename = Date.now() + '.' + ext;
+/*             const path = __dirname + '/uploads/' + filename;
+
+ */             const path =  'uploads/' + filename;
+            const bufferData = new Buffer(file.data.split(',')[1], 'base64');
+            fs.writeFile(path, bufferData, () => {
+                console.log('file saved ' + path);
             });
         }
 
@@ -204,8 +265,8 @@ wss.on('connection', (connection, req) => {
                 sender: connection.userId,
                 recipient,
                 text,
-                file:filename ,
-    
+                file: filename,
+
             });
             [...wss.clients]
                 .filter(c => c.userId === recipient)
@@ -213,7 +274,7 @@ wss.on('connection', (connection, req) => {
                     text,
                     sender: connection.userId,
                     recipient,
-                    file:file ? filename : null,
+                    file: file ? filename : null,
 
                     _id: MessageDoc._id,
                 })));
@@ -221,20 +282,12 @@ wss.on('connection', (connection, req) => {
     });
 
 
-/*     console.log([...wss.clients].map(c => c.username));
- */    
-/*     [...wss.clients].forEach(client => {
-        client.send(JSON.stringify({
-            online: [...wss.clients].map(c => ({ userId: c.userId, username: c.username }))
 
-        }
-        ));
-    }); */
 
     messageAboutOnlinePeople();
 
 });
 
-wss.on('close',data=>{
-    console.log('disconnect',data);
+wss.on('close', data => {
+    console.log('disconnect', data);
 })
