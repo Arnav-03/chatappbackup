@@ -7,6 +7,16 @@ import { UserContext } from './UserContext';
 import Start from './Start';
 import _ from 'lodash';
 import axios from 'axios';
+
+import w1 from './assets/w6.jpg';
+import search from './assets/search.png';
+import cross from './assets/cross.png';
+import setting from './assets/setting.png';
+
+import account from './assets/account.png';
+import image from './assets/image.png';
+import file from './assets/file.png';
+
 import PeopleList from './People';
 const Chat = () => {
 
@@ -18,6 +28,9 @@ const Chat = () => {
     const { username, id, setid, setusername } = useContext(UserContext);
     const [People, setPeople] = useState({});
     const divUnderMEssage = useRef(null);
+    const [sidebarVisible, setSidebarVisible] = useState(true); // State to manage sidebar visibility
+    const [showsearch, setshowsearch] = useState(false);
+    const [storedTimestamp, setStoredTimestamp] = useState(null);
 
     //making connection to websocket
     useEffect(() => {
@@ -60,7 +73,19 @@ const Chat = () => {
     }, [selectedUser, id, onlinePeople, People, messages, newMessage]);
 
 
-
+    /* 
+        function handlemessage(e) {
+            const messageData = JSON.parse(e.data);
+    
+            if (typeof messageData === 'object' && 'online' in messageData) {
+                showPeople(messageData.online);
+            } else if ('text' in messageData) {
+                if (messageData.sender === selectedUser) {
+                    setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+                }
+            }
+        }
+     */
     function handlemessage(e) {
         const messageData = JSON.parse(e.data);
 
@@ -69,36 +94,119 @@ const Chat = () => {
         } else if ('text' in messageData) {
             if (messageData.sender === selectedUser) {
                 setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+            } else if (messageData.recipient === id) {
+                // Add this condition to update the state with received messages for the logged-in user
+                setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
             }
         }
     }
 
 
-    function sendMessage(e, file = null) {
+    /* 
+        function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+            console.log('sending');
+            ws.send(JSON.stringify({
+                recipient: selectedUser,
+                text: newMessage,
+                file,
+                createdAt: new Date(), // Manually setting createdAt
+                updatedAt: new Date() // Manually setting updatedAt
+            }));
+    
+            setnewMessage("");
+            setMessages(prev => ([...prev, {
+                text: newMessage,
+                sender: id,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true
+            }]));
+            if (file) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+    
+    
+        } */
+
+    /*     function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+            console.log('sending');
+            const createdAt = new Date(); // Get the current time for createdAt
+            const updatedAt = new Date(); // Get the current time for updatedAt
+        
+            // Send the message with the correct timestamps
+            ws.send(JSON.stringify({
+                recipient: selectedUser,
+                text: newMessage,
+                file,
+                createdAt, // Set the createdAt timestamp
+                updatedAt, // Set the updatedAt timestamp
+            }));
+        
+            setnewMessage('');
+            const newMessageData = {
+                createdAt, // Set the createdAt timestamp for the displayed message
+                updatedAt, // Set the updatedAt timestamp for the displayed message
+                text: newMessage,
+                sender: id,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true,
+               
+            };
+        
+            setMessages(prev => ([...prev, newMessageData]));
+    
+            if (file) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+        } */
+   function sendMessage(e, file = null) {
         if (e) e.preventDefault();
         console.log('sending');
+        const createdAt = new Date(); // Get the current time for createdAt
+        const day = createdAt.toLocaleDateString('en-US');
+        const time = createdAt.toLocaleTimeString('en-US');
+
+        // Send the message with the correct timestamps
         ws.send(JSON.stringify({
+            day, // Set the day
+            time, // Set the time
             recipient: selectedUser,
             text: newMessage,
             file,
+            createdAt, // Set the createdAt timestamp
+
         }));
 
-        setnewMessage("");
-        setMessages(prev => ([...prev, {
+        setnewMessage('');
+        const newMessageData = {
+            day, // Set the day for the displayed message
+            time, // Set the time for the displayed message
             text: newMessage,
             sender: id,
             recipient: selectedUser,
             _id: Date.now(),
-            isOur: true
-        }]));
+            isOur: true,
+            createdAt, // Set the createdAt timestamp for the displayed message
+
+        };
+
+        setMessages(prev => ([...prev, newMessageData]));
         if (file) {
             axios.get('/messages/' + selectedUser).then(res => {
                 setMessages(res.data);
             });
         }
-
-
     }
+ 
+
+
     function sendfile(e) {
         const reader = new FileReader();
         reader.readAsDataURL(e.target.files[0]);
@@ -130,6 +238,26 @@ const Chat = () => {
         }
     }, [selectedUser]);
 
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return ''; // If the timestamp is missing or invalid, return an empty string
+
+        const date = new Date(timestamp);
+
+        if (isNaN(date.getTime())) {
+            return ''; // If the date is invalid, return an empty string
+        }
+
+        // Get date components
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+
+        // Get time components
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    };
 
 
     const onlinePeopleExcludingUser = { ...onlinePeople };
@@ -182,6 +310,7 @@ const Chat = () => {
     };
     const handleSelectUser = (userId) => {
         setselectedUser(userId); // Set the selectedUser when a user is clicked
+        setSidebarVisible(false); // Hide the sidebar
 
         // Update People list instantly
         axios.get('/people').then(res => {
@@ -209,52 +338,78 @@ const Chat = () => {
         return () => clearInterval(interval); // Clean up the interval on component unmount
     }, []);
 
-    
+    function getCurrentTimestamp() {
+        const date = new Date();
+        const day = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        return { day, time };
+    }
     return (
 
-        <div className='flex h-screen'>
-            <div className="bg-cyan-100 w-1/3 h-full flex flex-col p-5 mb-10 ">
+        <div
 
-                <div className="text-center bg-cyan-600 my-1 h-14 w-full p-3 rounded-lg text-white ">
-                    <span style={textStyle} className=' mx-2 capitalize  text-cyan-100 text-4xl tracking-[.16em]'>
+            className='flex h-screen '>
+            <div style={{
+                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                , opacity: '1',
+            }}
+                className="bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3   h-full flex flex-col p-7 mb-10 ">
+                {/*             <div className={`bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3 h-full flex flex-col p-5 mb-10 ${sidebarVisible ? '' : 'hidden'}`}>
+ */}
+                <div
+                    className="text-center bg-[#6ac4ad] my-1 h-12 w-full p-1 mt-0 rounded-[10px]  ">
+                    <span style={textStyle} className=' mx-2 capitalize  text-[#103d32] text-4xl tracking-[.16em]'>
                         {username}
                     </span>
                 </div>
+                <div className=" bg-[#185546]  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
+                    <img className='h-[30px]  cursor-pointer ' src={setting} alt="" />
+                    <div className="text-white font-bold text-xl border-white cursor-pointer border-[2px] border-t-0 border-b-0 p-5 pt-0 pb-0">status</div>
+                    <img onClick={() => { setshowsearch(true) }} className='h-[30px] cursor-pointer' src={search} alt="" />
 
-                <div className="flex flex-row bg-cyan-400 h-16 rounded-lg text-white font-bold text-4xl   text-center items-center py-10 px-16 mb-0">
+                </div>
+                <div
+                    className="flex flex-row bg-[#36a085] h-[30px] rounded-lg text-white font-bold text-4xl   text-center items-center py-6 px-16 mb-0">
                     <div className="ml-16">Chats</div>
-                    {<img className='h-12 mt-2 mx-2' src={chatimg} />}</div>
+                    {<img className='h-10 mt-2 mx-2' src={chatimg} />}</div>
 
 
                 {/*               ******************************************
  */}
 
                 <div>
+
+
                     {/* search */}
-                    <div >
-                        <input
-                            className='bg-white border-4 rounded-3xl font-mono h-12 border-cyan-900 w-full  p-3 pl-10 pr-10 m-2 text-cyan-900 font-bold'
-                            type="text"
-                            placeholder="Search by username..."
-                            value={searchTerm}
-                            onChange={(e) => handleSearch(e)}
-                        />
+                    {showsearch && (<div >
+                        <div className="flex flex-row">
+                            <input
+                                className='bg-transparent placeholder-[#385e54] border-[1px] rounded-[10px] font-mono h-9 outline-none border-[#0b352a] w-full  p-3 pl-10 pr-10 m-2 ml-0 mb-1 text-cyan-900 font-bold'
+                                type="text"
+                                placeholder="Search by username..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e)}
+                            />
+                            <img onClick={() => { setshowsearch(false) }} className='h-[30px] border-[1px] border-l-black mt-[10px] ml-[-43px]' src={cross}></img>
+                        </div>
+
                         {searchTerm.length > 0 && (
-                            <ul className='bg-white rounded-3xl p-4 mb-1 w-full border-4 border-cyan-900'>
+                            <ul className='bg-transparent rounded-[10px] p-3 mb-2 w-full border-[1px] border-[#094133] '>
                                 {searchResults.length > 0 ? (
                                     searchResults.map((user) => (
-                                        <li className='border-b-2 border-cyan-900 font-mono font-bold text-cyan-900' key={user.id}
+                                        <li className='border-b-[2px] flex flex-row cursor-pointer border-[#1e4e42] font-mono text-[20px] font-bold text-cyan-900' key={user.id}
                                             onClick={() => handleSelectUser(user._id)}>
-                                            {user.username}
+                                            <img className='h-[25px] mt-[3px] m-[3px] mr-4 ' src={account}></img>{user.username}
                                         </li>
                                     ))
                                 ) : (
-                                    <li className='border-b-2 border-cyan-900 font-mono font-bold text-cyan-900'>No such User found</li>
+                                    <li className='border-b-2 border-cyan-900 font-mono pl-[100px] font-bold text-cyan-900'>No User found !!!</li>
                                 )}
                             </ul>
                         )}
 
-                    </div>
+                    </div>)}
+
                 </div>
 
 
@@ -263,62 +418,83 @@ const Chat = () => {
 
                 {/*                 ******************************************
  */}
-                <div className="overflow-y-auto mm-5 h-full">
+                <div
+                    className="overflow-y-auto mm-5 h-full">
                     {/* Display users and handle selection */}
                     {Object.values(People).map((user) => (
                         <div
                             onClick={() => setselectedUser(user._id)} // Handle offline user selection
                             key={user._id}
-                            className={`cursor-pointer flex flex-row over bg-cyan-200 my-2 mx-1.5 border-cyan-700 h-14 font-bold px-4 py-3 text-xl capitalize rounded-3xl ${user._id === selectedUser ? 'bg-cyan-500 text-cyan-100 border-b-4 pl-6 border-cyan-800' : 'text-cyan-800 border-l-8'}`}
+                            className={`cursor-pointer flex flex-row over bg-[#49caa8] my-2  border-[#0C523F] h-11 font-bold px-4 py-3 text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#11382e] text-[#f8fffd] border-b-4   pl-6 border-[#11382e]' : 'text-[#0C523F] border-l-[5px]'}`}
                         >
-                            <div className="bg-cyan-900 h-9 w-9 rounded-full text-white px-2 py-0.5 mr-5 text-m text-center">
+                            <div className={` ${user._id === selectedUser ? "bg-[#f7f6f6] ml-[-4px] text-[#203b34]" : 'bg-[#0C523F]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
                                 {user.username[0]}
                             </div>
-                            {user.username}
+                            <span className='mt-[-5px]'> {user.username} </span>
                         </div>
                     ))}
                 </div>
 
-                
-                <div className="p-1 mt-4 text-center border-t-2 border-cyan-900 ">
+
+                <div className="p-1 mt-4 text-center border-t-2 border-black">
                     <button onClick={logout}
-                        className='bg-cyan-600  text-white font-bold p-2 rounded-lg'>Logout</button>
+                        className='bg-[#cf2626]  text-white font-bold p-2 rounded-lg'>Logout</button>
                 </div>
 
 
             </div>
-            <div className=" flex flex-col bg-cyan-300 w-2/3 overflow-hidden">
+            <div style={{
+                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                , opacity: '1',
+            }}
+                className=" flex flex-col  ack  min-[320px]:hidden  md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden">
+                {/*             <div className={`flex flex-col bg-cyan-300 min-[320px]:hidden md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden ${sidebarVisible ? 'hidden' : ''}`}>
+ */}
                 {!selectedUser && <Start />}
 
                 {!!selectedUser &&
-                    <div className="flex flex-col h-full  overflow-y-auto " >
+                    <div className="flex flex-col h-full border-l-[3px] border-black overflow-y-auto">
+                        <div className="bg-[#6dd1c9] text-white py-2 text-center font-bold text-2xl">
+                            Chatting with: <span className='text-[#245e59] '>{People[selectedUser]?.username}</span>
+                        </div>
                         <div className="flex-grow overflow-auto">
                             {
                                 messagesWithoutDupe.map((message, index) => (
-                                    <div key={message._id} // Use _id as the key
-                                        className={(message.sender == id ? ' text-right' : 'text-left')}>
-                                        <div className={
-                                            'p-2.5 m-1  rounded-2xl inline-block  ' + (message.sender === id ? 'bg-cyan-950 text-white ' : 'bg-cyan-200 text-cyan-950 font-medium')
-                                        }
-                                            key={index}>
-
-                                            <div className="inline-block font-sans text-lg ">
+                                    <div
+                                        key={message._id}
+                                        className={(message.sender == id ? 'text-right' : 'text-left')}
+                                    >
+                                        <div
+                                            className={
+                                                'p-2.5 m-0.5 max-w-[70%] rounded-[15px] inline-block ' +
+                                                (message.sender === id ? 'bg-[#0C523F] text-white ' : 'bg-[#49caa8] text-[#061110] font-medium')
+                                            }
+                                            key={index}
+                                        >
+                                            <div className="inline-block text-justify  font-sans text-lg break-words max-w-[100%]">
                                                 {message.text}
+
+
                                                 {message.file && (
                                                     <div className="">
-
                                                         <div className="underline text-center italic cursor-pointer">
-                                                            <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file}>
-                                                                <img className='h-64 w-64 m-0 p-0 rounded-2xl '
-                                                                    src={axios.defaults.baseURL + 'uploads/' + message.file}></img>
-                                                                <div> {message.file}   </div>
-
+                                                            <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file + '?t=' + Date.now()}>
+                                                                <img
+                                                                    className='h-40 w-40 m-0 p-0 rounded-xl'
+                                                                    src={message.file.endsWith('.png') || message.file.endsWith('.jpg') || message.file.endsWith('.jpeg') ? image : file}
+                                                                    alt='cannot show!!!'
+                                                                />
+                                                                <div className='text-[14px]'> {message.file} </div>
                                                             </a>
                                                         </div>
                                                     </div>
                                                 )}
-
-
+                                                <div className="text-sm text-[#07141b] text-[10px]">
+                                                    {formatTimestamp(message.createdAt) ? '' : (message.day && message.time ? `${message.day} ${message.time}` : (message.day = getCurrentTimestamp().day) && (message.time = getCurrentTimestamp().time))}
+                                                </div>
+                                                <div className="text-sm text-[#07141b] text-[10px]">
+                                                    {formatTimestamp(message.createdAt)}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -333,18 +509,18 @@ const Chat = () => {
                         <form onSubmit={sendMessage} className="flex gap-2 mx-2">
                             <input
                                 type="text"
-                                placeholder="Type your message here"
+                                placeholder="Type your message here..."
                                 value={newMessage}
                                 onChange={(e) => setnewMessage(e.target.value)}
                                 name=""
                                 id=""
-                                className="p-2 m-3 border-2 flex-grow rounded-lg outline-none border-cyan-900"
+                                className="p-2   placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none border-[#143633]"
                             />
-                            <label className="bg-cyan-500 cursor-pointer p-2 px-1 mx-0 my-3 text-white rounded-lg">
-                                <input type='file' className='hidden' onChange={sendfile} />
+                            <label className="bg-[#245e59] cursor-pointer p-2 px-1 mx-0 my-3 text-white rounded-lg">
+                                <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
                                 <img className="h-7" src={attach} alt="Send" />
                             </label>
-                            <button type='submit' className="bg-cyan-600 p-2 px-3 m-3 text-white rounded-lg">
+                            <button type='submit' className="bg-[#12312f] p-2 px-3 m-3 text-white rounded-lg">
                                 <img className="h-7" src={sendbtn} alt="Send" />
                             </button>
                         </form>

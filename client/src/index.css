@@ -5,9 +5,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Yellowtail&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Young+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro');
+@import url('https://fonts.googleapis.com/css2?family=Splash&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amatic+SC&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@keyframes flicker {
+  0%, 49.9% {
+opacity: 0; }
+  50%, 100% {
+  }
+}
+.flicker{
+  animation: flicker 1.3s infinite;
+
+}
 
 /* width */
 ::-webkit-scrollbar {
@@ -24,5 +37,55 @@
     background: #083966;
     border-radius: 5px;
 
-
   }
+
+  .button {
+    height: 50px;
+    width: 180px;
+    font-size: 30px;
+    background-color: transparent;
+    cursor: pointer;
+    border: 1px solid #a85a5a;
+
+    border-radius: 15px;
+    color: rgb(168, 90, 90);
+    transition: all 0.5s ease-in-out;
+    font-family: 'Splash', serif;
+    letter-spacing: 3px;
+  }
+  .button:hover{
+    background-color: rgb(168, 90, 90);
+    color: azure;
+    scale: 1.05;
+  }
+
+  .tracking-in-expand{animation:tracking-in-expand 2s cubic-bezier(.215,.61,.355,1.000) both}
+ 
+@keyframes tracking-in-expand{0%{letter-spacing:-.5em;opacity:0}40%{opacity:.6}100%{opacity:1}}
+
+@keyframes circle-in-hesitate {
+  0% {
+    clip-path: circle(0%);
+  }
+  40% {
+    clip-path: circle(40%);
+  }
+  100% {
+    clip-path: circle(125%);
+  }
+}
+.ani{
+  animation: 2.5s cubic-bezier(.25, 1, .30, 1) circle-in-hesitate both;
+
+}
+
+.backg{
+/*   border: 2px solid #854343;
+ */  padding: 50px;
+
+}
+.backg input{
+  border-radius: 5px;
+  border: 1px solid #854343;
+  outline: none;
+}

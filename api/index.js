@@ -250,22 +250,29 @@ wss.on('connection', (connection, req) => {
             const parts = file.name.split('.');
             const ext = parts[parts.length - 1];
             filename = Date.now() + '.' + ext;
-/*             const path = __dirname + '/uploads/' + filename;
+            const path = __dirname + '/uploads/' + filename;
 
- */             const path =  'uploads/' + filename;
-            const bufferData = new Buffer(file.data.split(',')[1], 'base64');
-            fs.writeFile(path, bufferData, () => {
-                console.log('file saved ' + path);
+            /*        const path =  'uploads/' + filename;
+             */
+            /*         const bufferData = new Buffer(file.data.split(',')[1], 'base64');
+             */
+            const bufferData = Buffer.from(file.data.split(',')[1], 'base64'); // Use Buffer.from() instead
+
+            fs.writeFile(path, bufferData, (err) => {
+                if (err) {
+                    console.error('Error saving file:', err);
+                } else {
+                    console.log('File saved at:', path);
+                }
             });
         }
-
 
         if (recipient && (text || file)) {
             const MessageDoc = await Message.create({
                 sender: connection.userId,
                 recipient,
                 text,
-                file: filename,
+                file: file ? filename : null,
 
             });
             [...wss.clients]
