@@ -325,9 +325,10 @@ const Chat = () => {
                             <ul className='bg-transparent rounded-[10px] p-3 mb-2 w-full border-[1px] border-[#094133] overflow-scroll max-h-[200px]'>
                                 {searchResults.length > 0 ? (
                                     searchResults.map((user) => (
+
                                         <li className='border-b-[2px] flex flex-row cursor-pointer overflow-hidden border-[#1e4e42] font-mono lg:text-[20px] sm:text-[12px]  font-bold text-cyan-900' key={user.id}
                                             onClick={() => handleSelectUser(user._id)}>
-                                            <img className='lg:h-[25px] sm:h-[20px] mt-[3px] m-[3px] mr-4 ' src={account}></img>
+                                            <img className='lg:h-[25px] min-[320px]:h-[20px] mt-[3px] m-[3px] mr-4 ' src={account}></img>
                                             {user.username}
                                         </li>
                                     ))
@@ -347,12 +348,11 @@ const Chat = () => {
                     {/* Display users and handle selection */}
                     {
                         Object.values(People).map((user) => (
-                            <div
-                                onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
+                            <div      onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
                                 key={user._id}
-                                className={`cursor-pointer flex flex-row overflow-hidden bg-[#49caa8] my-1.5  border-[#0C523F] h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#1b3831] text-[#ffffff]   pl-6 ' : 'text-[#0C523F] border-l-[5px]'}`}
+                                className={`cursor-pointer flex flex-row overflow-hidden  my-1.5  border-[#0C523F] h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#1b3831] text-[#ffffff]   pl-6 ' : 'text-[#0C523F] bg-[#49caa8] border-l-[5px]'}`}
                             >
-                                <div className={` ${user._id === selectedUser ? "bg-[#fdfdfd] ml-[-4px] text-[#1a352e] " : 'bg-[#0c4939]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
+                                <div className={` ${user._id === selectedUser ? "bg-[#fdfdfd] ml-[-4px] text-[#1a352e] " : 'bg-[#0c4939] text-white'}  h-8 capitalize w-8 rounded-full  px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
                                     {user.username[0]}
                                 </div>
                                 <span className='mt-[-3px] md:mt-[-5px] '> {user.username} </span>
