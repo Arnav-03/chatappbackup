@@ -350,9 +350,9 @@ const Chat = () => {
                             <div
                                 onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
                                 key={user._id}
-                                className={`cursor-pointer flex flex-row overflow-hidden bg-[#49caa8] my-1.5  border-[#0C523F] h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#1a362f] text-[#ffffff]   pl-6 ' : 'text-[#0C523F] border-l-[5px]'}`}
+                                className={`cursor-pointer flex flex-row overflow-hidden bg-[#49caa8] my-1.5  border-[#0C523F] h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#1b3831] text-[#ffffff]   pl-6 ' : 'text-[#0C523F] border-l-[5px]'}`}
                             >
-                                <div className={` ${user._id === selectedUser ? "bg-[#fdfdfd] ml-[-4px] text-[#1c3a32] " : 'bg-[#0C523F]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
+                                <div className={` ${user._id === selectedUser ? "bg-[#fdfdfd] ml-[-4px] text-[#1a352e] " : 'bg-[#0c4939]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
                                     {user.username[0]}
                                 </div>
                                 <span className='mt-[-3px] md:mt-[-5px] '> {user.username} </span>
