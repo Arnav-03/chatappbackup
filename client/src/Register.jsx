@@ -23,15 +23,8 @@ const Register = () => {
     const [loginerror, setError] = useState(false); // Use boolean instead of an empty string
     const [show, setshow] = useState(true);
 
-    /*   async function handlesubmit(e) {
-          e.preventDefault();
-          const url = IsloginOrRegister === "register" ? 'register' : 'login';
-          const { data } = await axios.post(`/${url}`, { username, password });
-          setLoggedInUsername(username);
-          setid(data.id);
-      } */
-
-    async function handlesubmit(e) {
+ 
+     async function handlesubmit(e) {
         e.preventDefault();
         const url = IsloginOrRegister === "register" ? 'register' : 'login';
 
@@ -55,6 +48,7 @@ const Register = () => {
             setLoginStatus(false); // Set loginStatus to false due to login failure
         }
     }
+ 
 
 
     const mainstyle = {

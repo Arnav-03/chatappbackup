@@ -12,12 +12,11 @@ import w1 from './assets/w6.jpg';
 import search from './assets/search.png';
 import cross from './assets/cross.png';
 import setting from './assets/setting.png';
-
 import account from './assets/account.png';
 import image from './assets/image.png';
 import file from './assets/file.png';
+import backarrow from './assets/backarrow.png';
 
-import PeopleList from './People';
 const Chat = () => {
 
     const [ws, setws] = useState(null);
@@ -31,7 +30,21 @@ const Chat = () => {
     const [sidebarVisible, setSidebarVisible] = useState(true); // State to manage sidebar visibility
     const [showsearch, setshowsearch] = useState(false);
     const [storedTimestamp, setStoredTimestamp] = useState(null);
+    const [unreadMessages, setUnreadMessages] = useState({});
+    const [notificationpeople, setnotificationpeople] = useState({});
+    const [selectedFile, setSelectedFile] = useState(true);
 
+    const [leftVisible, setLeftVisible] = useState(true);
+    const [rightVisible, setRightVisible] = useState(false);
+
+    const handleBackArrowClick = () => {
+        var w = window.innerWidth;
+
+        if (w < 768) {
+            setLeftVisible(!leftVisible);
+            setRightVisible(!rightVisible);
+        }
+    };
     //making connection to websocket
     useEffect(() => {
         connectTOWs();
@@ -50,14 +63,6 @@ const Chat = () => {
             }, 1000);
         });
     }
-    /* 
-        function showPeople(peopleArray) {
-            const people = {};
-            peopleArray.forEach(({ userId, username }) => {
-                people[userId] = username;
-            });
-            setonlinePeople(people);
-        } */
 
 
     useEffect(() => {
@@ -72,101 +77,24 @@ const Chat = () => {
 
     }, [selectedUser, id, onlinePeople, People, messages, newMessage]);
 
-
-    /* 
-        function handlemessage(e) {
-            const messageData = JSON.parse(e.data);
-    
-            if (typeof messageData === 'object' && 'online' in messageData) {
-                showPeople(messageData.online);
-            } else if ('text' in messageData) {
-                if (messageData.sender === selectedUser) {
-                    setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
-                }
-            }
-        }
-     */
     function handlemessage(e) {
         const messageData = JSON.parse(e.data);
+
 
         if (typeof messageData === 'object' && 'online' in messageData) {
             showPeople(messageData.online);
         } else if ('text' in messageData) {
-            if (messageData.sender === selectedUser) {
-                setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
-            } else if (messageData.recipient === id) {
-                // Add this condition to update the state with received messages for the logged-in user
-                setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+            const isMessageForSelectedUser = messageData.sender === selectedUser || messageData.recipient === selectedUser;
+
+            if (isMessageForSelectedUser) {
+                setMessages(prevMessages => [...prevMessages, { ...messageData, isOur: false }]);
             }
+
         }
     }
 
 
-    /* 
-        function sendMessage(e, file = null) {
-            if (e) e.preventDefault();
-            console.log('sending');
-            ws.send(JSON.stringify({
-                recipient: selectedUser,
-                text: newMessage,
-                file,
-                createdAt: new Date(), // Manually setting createdAt
-                updatedAt: new Date() // Manually setting updatedAt
-            }));
-    
-            setnewMessage("");
-            setMessages(prev => ([...prev, {
-                text: newMessage,
-                sender: id,
-                recipient: selectedUser,
-                _id: Date.now(),
-                isOur: true
-            }]));
-            if (file) {
-                axios.get('/messages/' + selectedUser).then(res => {
-                    setMessages(res.data);
-                });
-            }
-    
-    
-        } */
-
-    /*     function sendMessage(e, file = null) {
-            if (e) e.preventDefault();
-            console.log('sending');
-            const createdAt = new Date(); // Get the current time for createdAt
-            const updatedAt = new Date(); // Get the current time for updatedAt
-        
-            // Send the message with the correct timestamps
-            ws.send(JSON.stringify({
-                recipient: selectedUser,
-                text: newMessage,
-                file,
-                createdAt, // Set the createdAt timestamp
-                updatedAt, // Set the updatedAt timestamp
-            }));
-        
-            setnewMessage('');
-            const newMessageData = {
-                createdAt, // Set the createdAt timestamp for the displayed message
-                updatedAt, // Set the updatedAt timestamp for the displayed message
-                text: newMessage,
-                sender: id,
-                recipient: selectedUser,
-                _id: Date.now(),
-                isOur: true,
-               
-            };
-        
-            setMessages(prev => ([...prev, newMessageData]));
-    
-            if (file) {
-                axios.get('/messages/' + selectedUser).then(res => {
-                    setMessages(res.data);
-                });
-            }
-        } */
-   function sendMessage(e, file = null) {
+    function sendMessage(e, file = null) {
         if (e) e.preventDefault();
         console.log('sending');
         const createdAt = new Date(); // Get the current time for createdAt
@@ -180,6 +108,7 @@ const Chat = () => {
             recipient: selectedUser,
             text: newMessage,
             file,
+            isRead: false,
             createdAt, // Set the createdAt timestamp
 
         }));
@@ -190,6 +119,7 @@ const Chat = () => {
             time, // Set the time for the displayed message
             text: newMessage,
             sender: id,
+            isRead: false,
             recipient: selectedUser,
             _id: Date.now(),
             isOur: true,
@@ -204,7 +134,7 @@ const Chat = () => {
             });
         }
     }
- 
+
 
 
     function sendfile(e) {
@@ -276,7 +206,9 @@ const Chat = () => {
     }
 
 
-    const textStyle = { fontFamily: "'Yellowtail', cursive" };
+    const textStyle = {
+        fontFamily: "'Yellowtail', cursive", whiteSpace: 'normal',
+    };
 
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -326,6 +258,8 @@ const Chat = () => {
         });
 
     };
+
+
     const [rerenderFlag, setRerenderFlag] = useState(false);
 
     // Function to trigger re-render every second
@@ -344,39 +278,33 @@ const Chat = () => {
         const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
         return { day, time };
     }
+
+
+    /* *******************************************************************************************************
+     */
     return (
 
-        <div
+        <div className='flex h-screen '>
+            <div style={{ backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)', opacity: '1', }}
 
-            className='flex h-screen '>
-            <div style={{
-                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
-                , opacity: '1',
-            }}
-                className="bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3   h-full flex flex-col p-7 mb-10 ">
-                {/*             <div className={`bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3 h-full flex flex-col p-5 mb-10 ${sidebarVisible ? '' : 'hidden'}`}>
- */}
+                className={`bg-cyan-100 min-[320px] w-full  lg:w-1/3 md:w-1/3 h-full flex flex-col p-7 mb-10 ${leftVisible ? '' : 'hidden'}`}>
+
                 <div
-                    className="text-center bg-[#6ac4ad] my-1 h-12 w-full p-1 mt-0 rounded-[10px]  ">
-                    <span style={textStyle} className=' mx-2 capitalize  text-[#103d32] text-4xl tracking-[.16em]'>
+                    className="text-center bg-[#6ac4ad] my-1  w-full p-1 mt-0 rounded-[10px]   ">
+                    <span style={textStyle} className=' mx-2 capitalize  text-[#103d32] text-2xl  md:text-lg lg:text-2xl xl:text-4xl tracking-[.16em]'>
                         {username}
                     </span>
                 </div>
                 <div className=" bg-[#185546]  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
-                    <img className='h-[30px]  cursor-pointer ' src={setting} alt="" />
+                    <img className='h-[30px] mf:  cursor-pointer ' src={setting} alt="" />
                     <div className="text-white font-bold text-xl border-white cursor-pointer border-[2px] border-t-0 border-b-0 p-5 pt-0 pb-0">status</div>
                     <img onClick={() => { setshowsearch(true) }} className='h-[30px] cursor-pointer' src={search} alt="" />
 
                 </div>
                 <div
-                    className="flex flex-row bg-[#36a085] h-[30px] rounded-lg text-white font-bold text-4xl   text-center items-center py-6 px-16 mb-0">
-                    <div className="ml-16">Chats</div>
-                    {<img className='h-10 mt-2 mx-2' src={chatimg} />}</div>
-
-
-                {/*               ******************************************
- */}
-
+                    className="flex flex-row justify-center bg-[#36a085]  h-[30px] rounded-lg text-white font-bold text-4xl md:text-2xl lg:text-3xl   text-center py-6  mb-0">
+                    <div className="mt-[-20px]">Chats</div>
+                    {<img className='h-10 mt-[-15px] md:h-8 ' src={chatimg} />}</div>
                 <div>
 
 
@@ -394,116 +322,130 @@ const Chat = () => {
                         </div>
 
                         {searchTerm.length > 0 && (
-                            <ul className='bg-transparent rounded-[10px] p-3 mb-2 w-full border-[1px] border-[#094133] '>
+                            <ul className='bg-transparent rounded-[10px] p-3 mb-2 w-full border-[1px] border-[#094133] overflow-scroll max-h-[200px]'>
                                 {searchResults.length > 0 ? (
                                     searchResults.map((user) => (
-                                        <li className='border-b-[2px] flex flex-row cursor-pointer border-[#1e4e42] font-mono text-[20px] font-bold text-cyan-900' key={user.id}
+                                        <li className='border-b-[2px] flex flex-row cursor-pointer overflow-hidden border-[#1e4e42] font-mono lg:text-[20px] sm:text-[12px]  font-bold text-cyan-900' key={user.id}
                                             onClick={() => handleSelectUser(user._id)}>
-                                            <img className='h-[25px] mt-[3px] m-[3px] mr-4 ' src={account}></img>{user.username}
+                                            <img className='lg:h-[25px] sm:h-[20px] mt-[3px] m-[3px] mr-4 ' src={account}></img>
+                                            {user.username}
                                         </li>
                                     ))
                                 ) : (
-                                    <li className='border-b-2 border-cyan-900 font-mono pl-[100px] font-bold text-cyan-900'>No User found !!!</li>
+                                    <div className="flex justify-center">
+                                        <li className='border-b-2 border-cyan-900 font-mono  font-bold text-cyan-900'>No User found !!!</li>
+
+                                    </div>
                                 )}
                             </ul>
                         )}
 
                     </div>)}
-
                 </div>
-
-
-
-
-
-                {/*                 ******************************************
- */}
                 <div
                     className="overflow-y-auto mm-5 h-full">
                     {/* Display users and handle selection */}
-                    {Object.values(People).map((user) => (
-                        <div
-                            onClick={() => setselectedUser(user._id)} // Handle offline user selection
-                            key={user._id}
-                            className={`cursor-pointer flex flex-row over bg-[#49caa8] my-2  border-[#0C523F] h-11 font-bold px-4 py-3 text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#11382e] text-[#f8fffd] border-b-4   pl-6 border-[#11382e]' : 'text-[#0C523F] border-l-[5px]'}`}
-                        >
-                            <div className={` ${user._id === selectedUser ? "bg-[#f7f6f6] ml-[-4px] text-[#203b34]" : 'bg-[#0C523F]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
-                                {user.username[0]}
+                    {
+                        Object.values(People).map((user) => (
+                            <div
+                                onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
+                                key={user._id}
+                                className={`cursor-pointer flex flex-row overflow-hidden bg-[#49caa8] my-1.5  border-[#0C523F] h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#1a362f] text-[#ffffff]   pl-6 ' : 'text-[#0C523F] border-l-[5px]'}`}
+                            >
+                                <div className={` ${user._id === selectedUser ? "bg-[#fdfdfd] ml-[-4px] text-[#1c3a32] " : 'bg-[#0C523F]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
+                                    {user.username[0]}
+                                </div>
+                                <span className='mt-[-3px] md:mt-[-5px] '> {user.username} </span>
                             </div>
-                            <span className='mt-[-5px]'> {user.username} </span>
-                        </div>
-                    ))}
+                        ))
+
+                    }
+
+
                 </div>
-
-
                 <div className="p-1 mt-4 text-center border-t-2 border-black">
                     <button onClick={logout}
                         className='bg-[#cf2626]  text-white font-bold p-2 rounded-lg'>Logout</button>
                 </div>
-
-
             </div>
-            <div style={{
-                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
-                , opacity: '1',
-            }}
-                className=" flex flex-col  ack  min-[320px]:hidden  md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden">
-                {/*             <div className={`flex flex-col bg-cyan-300 min-[320px]:hidden md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden ${sidebarVisible ? 'hidden' : ''}`}>
- */}
-                {!selectedUser && <Start />}
 
+            <div style={{
+                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)', opacity: '1',
+            }}
+
+                className={`flex flex-col  ack min-[320px]:w-full sm:w-full  md:block md:w-full lg:block lg:w-2/3  overflow-hidden ${rightVisible ? '' : 'hidden'}`}>
+
+
+                {!selectedUser && <Start />}
                 {!!selectedUser &&
                     <div className="flex flex-col h-full border-l-[3px] border-black overflow-y-auto">
-                        <div className="bg-[#6dd1c9] text-white py-2 text-center font-bold text-2xl">
-                            Chatting with: <span className='text-[#245e59] '>{People[selectedUser]?.username}</span>
+                        <div className="bg-[#6dd1c9] flex flex-row items-center justify-center text-white py-3 text-center font-bold text-xl lg:text-2xl">
+                            <div>
+                                <img className="h-10 mt-[3px] pb-0 ml-5 md:hidden" src={backarrow} onClick={handleBackArrowClick}></img>
+                            </div>
+                            <div className="flex-grow text-center">
+                                Chatting with: <span className='text-[#245e59]'>{People[selectedUser]?.username}</span>
+                            </div>
                         </div>
+
+                        
+
                         <div className="flex-grow overflow-auto">
-                            {
-                                messagesWithoutDupe.map((message, index) => (
-                                    <div
-                                        key={message._id}
-                                        className={(message.sender == id ? 'text-right' : 'text-left')}
-                                    >
+
+                            {messagesWithoutDupe.map((message, index) => {
+                                if (message.sender === selectedUser || message.recipient === selectedUser) {
+
+                                    return (
                                         <div
-                                            className={
-                                                'p-2.5 m-0.5 max-w-[70%] rounded-[15px] inline-block ' +
-                                                (message.sender === id ? 'bg-[#0C523F] text-white ' : 'bg-[#49caa8] text-[#061110] font-medium')
-                                            }
-                                            key={index}
+                                            key={message._id}
+                                            className={(message.sender == id ? 'text-right' : 'text-left')}
                                         >
-                                            <div className="inline-block text-justify  font-sans text-lg break-words max-w-[100%]">
-                                                {message.text}
+                                            <div
+                                                className={
+                                                    'p-2.5 m-0.5 max-w-[70%] rounded-[15px] inline-block ' +
+                                                    (message.sender === id ? 'bg-[#246e5b] text-white ' : 'bg-[#49caa8] text-[#061110] font-medium')
+                                                }
+                                                key={index}
+                                            >
+                                                <div className="inline-block text-justify  font-sans sm:text-base md:text-lg break-words max-w-[100%]">
+                                                    {message.text}
 
 
-                                                {message.file && (
-                                                    <div className="">
-                                                        <div className="underline text-center italic cursor-pointer">
-                                                            <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file + '?t=' + Date.now()}>
-                                                                <img
-                                                                    className='h-40 w-40 m-0 p-0 rounded-xl'
-                                                                    src={message.file.endsWith('.png') || message.file.endsWith('.jpg') || message.file.endsWith('.jpeg') ? image : file}
-                                                                    alt='cannot show!!!'
-                                                                />
-                                                                <div className='text-[14px]'> {message.file} </div>
-                                                            </a>
+                                                    {message.file && (
+                                                        <div className="">
+                                                            <div className="underline text-center italic cursor-pointer">
+                                                                <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file + '?t=' + Date.now()}>
+                                                                    <img
+                                                                        className='h-40 w-40 m-0 p-0 rounded-xl'
+                                                                        src={message.file.endsWith('.png') || message.file.endsWith('.jpg') || message.file.endsWith('.jpeg') ? image : file}
+                                                                        alt='cannot show!!!'
+                                                                    />
+                                                                    <div className='text-[14px]'> {message.file} </div>
+                                                                </a>
+                                                            </div>
                                                         </div>
+
+                                                    )}
+
+                                                    <div className="text-xs text-[#071b09] ">
+                                                        {formatTimestamp(message.createdAt) ? '' : (message.day && message.time ? `${message.day} ${message.time}` : (message.day = getCurrentTimestamp().day) && (message.time = getCurrentTimestamp().time))}
                                                     </div>
-                                                )}
-                                                <div className="text-sm text-[#07141b] text-[10px]">
-                                                    {formatTimestamp(message.createdAt) ? '' : (message.day && message.time ? `${message.day} ${message.time}` : (message.day = getCurrentTimestamp().day) && (message.time = getCurrentTimestamp().time))}
+                                                    <div className="text-xs text-[#071b09] ">
+                                                        {formatTimestamp(message.createdAt)}
+                                                    </div>
+
+
                                                 </div>
-                                                <div className="text-sm text-[#07141b] text-[10px]">
-                                                    {formatTimestamp(message.createdAt)}
-                                                </div>
+
                                             </div>
+
+
                                         </div>
-                                    </div>
-                                ))
-
-                            }
+                                    );
+                                }
+                                return null;
+                            })}
                             <div ref={divUnderMEssage}></div>
-
-
                         </div>
 
                         <form onSubmit={sendMessage} className="flex gap-2 mx-2">
