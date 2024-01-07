@@ -279,7 +279,7 @@ const Chat = () => {
         return { day, time };
     }
 
-
+    const [setuuser, setsetuuser] = useState("");
     /* *******************************************************************************************************
      */
     return (
@@ -327,7 +327,10 @@ const Chat = () => {
                                     searchResults.map((user) => (
 
                                         <li className='border-b-[2px] flex flex-row cursor-pointer overflow-hidden border-[#1e4e42] font-mono lg:text-[20px] sm:text-[12px]  font-bold text-cyan-900' key={user.id}
-                                            onClick={() => handleSelectUser(user._id)}>
+                                            onClick={() => {
+                                                handleSelectUser(user._id);
+                                                handleBackArrowClick();
+                                            }}>
                                             <img className='lg:h-[25px] min-[320px]:h-[20px] mt-[3px] m-[3px] mr-4 ' src={account}></img>
                                             {user.username}
                                         </li>
@@ -348,7 +351,7 @@ const Chat = () => {
                     {/* Display users and handle selection */}
                     {
                         Object.values(People).map((user) => (
-                            <div      onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
+                            <div onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
                                 key={user._id}
                                 className={`cursor-pointer flex flex-row overflow-hidden  my-1.5  border-[#0C523F] h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#1b3831] text-[#ffffff]   pl-6 ' : 'text-[#0C523F] bg-[#49caa8] border-l-[5px]'}`}
                             >
@@ -383,12 +386,13 @@ const Chat = () => {
                             <div>
                                 <img className="h-10 mt-[3px] pb-0 ml-5 md:hidden" src={backarrow} onClick={handleBackArrowClick}></img>
                             </div>
-                            <div className="flex-grow text-center">
+                              <div className="flex-grow text-center">
                                 Chatting with: <span className='text-[#245e59]'>{People[selectedUser]?.username}</span>
-                            </div>
+                            </div> 
+                         
                         </div>
 
-                        
+
 
                         <div className="flex-grow overflow-auto">
 
