@@ -7,7 +7,7 @@ import { UserContext } from './UserContext';
 import Start from './Start';
 import _ from 'lodash';
 import axios from 'axios';
-
+import * as themes from './Colors';
 import w1 from './assets/w6.jpg';
 import search from './assets/search.png';
 import cross from './assets/cross.png';
@@ -282,27 +282,32 @@ const Chat = () => {
     const [setuuser, setsetuuser] = useState("");
     /* *******************************************************************************************************
      */
+    const allThemes = themes;
+    const lavenderTheme = allThemes.lavender_theme;
+
     return (
 
+
         <div className='flex h-screen '>
-            <div style={{ backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)', opacity: '1', }}
+            <div style={{ background: lavenderTheme.left_color }}
 
-                className={`bg-cyan-100 min-[320px] w-full  lg:w-1/3 md:w-1/3 h-full flex flex-col p-7 mb-10 ${leftVisible ? '' : 'hidden'}`}>
+                className={` min-[320px] w-full  lg:w-1/3 md:w-1/3 h-full flex flex-col p-3 mb-10 ${leftVisible ? '' : 'hidden'}`}>
+                <div style={{ background: lavenderTheme.title_color, color: lavenderTheme.left_color_text }}
 
-                <div
-                    className="text-center bg-[#6ac4ad] my-1  w-full p-1 mt-0 rounded-[10px]   ">
-                    <span style={textStyle} className=' mx-2 capitalize  text-[#103d32] text-2xl  md:text-lg lg:text-2xl xl:text-4xl tracking-[.16em]'>
+                    className={`text-center  my-1  w-full p-1 mt-0 rounded-[10px] `}>
+                    <span style={textStyle} className=' mx-2 capitalize   text-2xl  md:text-lg lg:text-2xl xl:text-4xl tracking-[.16em]'>
                         {username}
                     </span>
                 </div>
-                <div className=" bg-[#185546]  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
+                <div style={{ background: lavenderTheme.toolbox_theme }}
+                    className="  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
                     <img className='h-[30px] mf:  cursor-pointer ' src={setting} alt="" />
                     <div className="text-white font-bold text-xl border-white cursor-pointer border-[2px] border-t-0 border-b-0 p-5 pt-0 pb-0">status</div>
                     <img onClick={() => { setshowsearch(true) }} className='h-[30px] cursor-pointer' src={search} alt="" />
 
                 </div>
-                <div
-                    className="flex flex-row justify-center bg-[#36a085]  h-[30px] rounded-lg text-white font-bold text-4xl md:text-2xl lg:text-3xl   text-center py-6  mb-0">
+                <div style={{ background: lavenderTheme.chat_title_theme }}
+                    className="flex flex-row justify-center   h-[30px] rounded-lg text-white font-bold text-4xl md:text-2xl lg:text-3xl   text-center py-6  mb-0">
                     <div className="mt-[-20px]">Chats</div>
                     {<img className='h-10 mt-[-15px] md:h-8 ' src={chatimg} />}</div>
                 <div>
@@ -312,32 +317,35 @@ const Chat = () => {
                     {showsearch && (<div >
                         <div className="flex flex-row">
                             <input
-                                className='bg-transparent placeholder-[#385e54] border-[1px] rounded-[10px] font-mono h-9 outline-none border-[#0b352a] w-full  p-3 pl-10 pr-10 m-2 ml-0 mb-1 text-cyan-900 font-bold'
+                                className={`${lavenderTheme.search_bar_and_text} bg-transparent  border-[1px] rounded-[10px] font-mono h-9 outline-none  w-full  p-3 pl-10 pr-10 m-2 ml-0 mb-1 font-bold`}
                                 type="text"
                                 placeholder="Search by username..."
                                 value={searchTerm}
                                 onChange={(e) => handleSearch(e)}
                             />
-                            <img onClick={() => { setshowsearch(false) }} className='h-[30px] border-[1px] border-l-black mt-[10px] ml-[-43px]' src={cross}></img>
+                            <img onClick={() => { setshowsearch(false) }} className={`${lavenderTheme.search_cross} h-[30px]   mt-[10px] rounded-[10px] ml-[-43px]`} src={cross}></img>
                         </div>
 
                         {searchTerm.length > 0 && (
-                            <ul className='bg-transparent rounded-[10px] p-3 mb-2 w-full border-[1px] border-[#094133] overflow-scroll max-h-[200px]'>
+                            <ul className={`${lavenderTheme.search_box}
+                            bg-transparent rounded-[10px] p-3 mb-4 w-full border-[1px]  overflow-scroll max-h-[200px]`}>
                                 {searchResults.length > 0 ? (
                                     searchResults.map((user) => (
 
-                                        <li className='border-b-[2px] flex flex-row cursor-pointer overflow-hidden border-[#1e4e42] font-mono lg:text-[20px] sm:text-[12px]  font-bold text-cyan-900' key={user.id}
+                                        <li
+                                            className={` ${lavenderTheme.search_border_and_text} flex flex-row cursor-pointer overflow-hidden  font-mono lg:text-[20px] sm:text-[12px]  font-bold`} key={user.id}
                                             onClick={() => {
                                                 handleSelectUser(user._id);
                                                 handleBackArrowClick();
                                             }}>
-                                            <img className='lg:h-[25px] min-[320px]:h-[20px] mt-[3px] m-[3px] mr-4 ' src={account}></img>
+                                            <img style={{ background: lavenderTheme.search_account_theme }}
+                                                className='lg:h-[25px] min-[320px]:h-[20px] mt-[3px] rounded-full m-[3px] mr-4 ' src={account}></img>
                                             {user.username}
                                         </li>
                                     ))
                                 ) : (
                                     <div className="flex justify-center">
-                                        <li className='border-b-2 border-cyan-900 font-mono  font-bold text-cyan-900'>No User found !!!</li>
+                                        <li className={` ${lavenderTheme.search_not_found} border-b-2  font-mono  font-bold `}>No User found !!!</li>
 
                                     </div>
                                 )}
@@ -353,9 +361,15 @@ const Chat = () => {
                         Object.values(People).map((user) => (
                             <div onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
                                 key={user._id}
-                                className={`cursor-pointer flex flex-row overflow-hidden  my-1.5  border-[#0C523F] h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#1b3831] text-[#ffffff]   pl-6 ' : 'text-[#0C523F] bg-[#49caa8] border-l-[5px]'}`}
+                                className={`cursor-pointer flex flex-row overflow-hidden  my-1.5   h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? `${lavenderTheme.username_theme_selected}` : `${lavenderTheme.username_theme_not_selected}`}`}
                             >
-                                <div className={` ${user._id === selectedUser ? "bg-[#fdfdfd] ml-[-4px] text-[#1a352e] " : 'bg-[#0c4939] text-white'}  h-8 capitalize w-8 rounded-full  px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
+
+                                <div
+                                    className={`${user._id === selectedUser
+                                        ? `${lavenderTheme.alphabet_theme_selected}`
+                                        : `${lavenderTheme.alphabet_theme_not_selected}`
+                                        } h-8 capitalize w-8 rounded-full px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}
+                                >
                                     {user.username[0]}
                                 </div>
                                 <span className='mt-[-3px] md:mt-[-5px] '> {user.username} </span>
@@ -366,30 +380,30 @@ const Chat = () => {
 
 
                 </div>
-                <div className="p-1 mt-4 text-center border-t-2 border-black">
+                <div className="p-1 mt-4 text-center ">
                     <button onClick={logout}
                         className='bg-[#cf2626]  text-white font-bold p-2 rounded-lg'>Logout</button>
                 </div>
             </div>
 
-            <div style={{
-                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)', opacity: '1',
-            }}
-
+            <div
+                style={{ background: lavenderTheme.left_color }}
                 className={`flex flex-col  ack min-[320px]:w-full sm:w-full  md:block md:w-full lg:block lg:w-2/3  overflow-hidden ${rightVisible ? '' : 'hidden'}`}>
 
 
                 {!selectedUser && <Start />}
                 {!!selectedUser &&
                     <div className="flex flex-col h-full border-l-[3px] border-black overflow-y-auto">
-                        <div className="bg-[#6dd1c9] flex flex-row items-center justify-center text-white py-3 text-center font-bold text-xl lg:text-2xl">
+                        <div
+                            className={`${lavenderTheme.chatting_with_theme} flex flex-row items-center justify-center text-white py-3 text-center font-bold text-xl lg:text-2xl`}>
                             <div>
                                 <img className="h-10 mt-[3px] pb-0 ml-5 md:hidden" src={backarrow} onClick={handleBackArrowClick}></img>
                             </div>
-                              <div className="flex-grow text-center">
-                                Chatting with: <span className='text-[#245e59]'>{People[selectedUser]?.username}</span>
-                            </div> 
-                         
+                            <div className="flex-grow text-center">
+                                Chatting with: <span
+                                    className={`${lavenderTheme.chatting_with_color}`}>{People[selectedUser]?.username}</span>
+                            </div>
+
                         </div>
 
 
@@ -405,10 +419,9 @@ const Chat = () => {
                                             className={(message.sender == id ? 'text-right' : 'text-left')}
                                         >
                                             <div
-                                                className={
-                                                    'p-2.5 m-0.5 max-w-[70%] rounded-[15px] inline-block ' +
-                                                    (message.sender === id ? 'bg-[#246e5b] text-white ' : 'bg-[#49caa8] text-[#061110] font-medium')
-                                                }
+
+                                                className={`p-2.5 m-0.5 max-w-[70%] rounded-[15px] inline-block font-medium ${message.sender === id ? lavenderTheme.sender_color : lavenderTheme.receiver_color
+                                                    }`}
                                                 key={index}
                                             >
                                                 <div className="inline-block text-justify  font-sans sm:text-base md:text-lg break-words max-w-[100%]">
@@ -460,13 +473,13 @@ const Chat = () => {
                                 onChange={(e) => setnewMessage(e.target.value)}
                                 name=""
                                 id=""
-                                className="p-2   placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none border-[#143633]"
+                                className={`p-2 ${lavenderTheme.messagebox_border}  placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none `}
                             />
-                            <label className="bg-[#245e59] cursor-pointer p-2 px-1 mx-0 my-3 text-white rounded-lg">
+                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2 px-1 mx-0 my-3 text-white rounded-lg`}>
                                 <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
                                 <img className="h-7" src={attach} alt="Send" />
                             </label>
-                            <button type='submit' className="bg-[#12312f] p-2 px-3 m-3 text-white rounded-lg">
+                            <button type='submit' className={`${lavenderTheme.sentbutton_color} p-2 px-3 m-3 text-white rounded-lg`}>
                                 <img className="h-7" src={sendbtn} alt="Send" />
                             </button>
                         </form>
