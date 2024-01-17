@@ -155,7 +155,7 @@ app.get('/api/profile', (req, res) => {
     }
 });
 
-app.post('/api/login', async (req, res) => {
+/* app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const foundUser = await User.findOne({ username });
     if (foundUser) {
@@ -168,15 +168,42 @@ app.post('/api/login', async (req, res) => {
             });
         }
     }
-});
+}); */
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    const foundUser = await User.findOne({ username });
+    
+    try {
+        if (!foundUser) {
+            throw new Error('Invalid username or password');
+        }
 
+        const passOk = bcrypt.compareSync(password, foundUser.password);
+        if (!passOk) {
+            throw new Error('Invalid username or password');
+        }
+
+        jwt.sign({ userId: foundUser._id, username }, jwtSecret, {}, (err, token) => {
+            if (err) {
+                throw err;
+            }
+
+            res.cookie('token', token, { sameSite: 'none', secure: true }).json({
+                id: foundUser._id,
+            });
+        });
+    } catch (err) {
+        console.error('Login error:', err.message);
+        res.status(401).json({ error: err.message });
+    }
+});
 
 app.post('/api/logout', (req, res) => {
 
     res.cookie('token', '', { sameSite: 'none', secure: true }).json('logout');
 });
 
-
+/* 
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -196,8 +223,46 @@ app.post('/api/register', async (req, res) => {
         if (err) throw err;
     }
 
-});
+}); */
+async function checkUserExists(username) {
+    try {
+        const response = await axios.get(`/api/checkuser/${username}`);
+        return response.data.exists;
+    } catch (error) {
+        console.error("Error checking user existence:", error);
+        return false;
+    }
+}
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
 
+    try {
+        const existingUser = await User.findOne({ username });
+
+        if (existingUser) {
+            throw new Error('Username already exists');
+        }
+
+        const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
+        const createdUser = await User.create({
+            username: username,
+            password: hashedPassword,
+        });
+
+        jwt.sign({ userId: createdUser._id, username }, jwtSecret, {}, (err, token) => {
+            if (err) {
+                throw err;
+            }
+
+            res.cookie('token', token, { sameSite: 'none', secure: true }).status(201).json({
+                id: createdUser._id,
+            });
+        });
+    } catch (err) {
+        console.error('Registration error:', err.message);
+        res.status(400).json({ error: err.message });
+    }
+});
 
 
 

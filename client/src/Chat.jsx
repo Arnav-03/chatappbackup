@@ -96,7 +96,11 @@ const Chat = () => {
 
     function sendMessage(e, file = null) {
         if (e) e.preventDefault();
-        console.log('sending');
+        // Check if the newMessage is empty or contains only whitespace
+        if (!newMessage.trim()) {
+            // Do not send empty messages
+            return;
+        }
         const createdAt = new Date(); // Get the current time for createdAt
         const day = createdAt.toLocaleDateString('en-US');
         const time = createdAt.toLocaleTimeString('en-US');
@@ -282,9 +286,28 @@ const Chat = () => {
     const [setuuser, setsetuuser] = useState("");
     /* *******************************************************************************************************
      */
+  
+    const [showsettings, setshowsettings] = useState(false);
+    const [showtheme, setshowtheme] = useState(false);
+    const [showlogout, setshowlogout] = useState(false);
+ /*    const [colortheme, setcolortheme] = useState("main_theme");
     const allThemes = themes;
-    const lavenderTheme = allThemes.lavender_theme;
-
+      function settheme(theme){
+           
+            const final_theme=  "allThemes."+ theme;
+            setcolortheme(final_theme);
+    
+        }
+       
+        const lavenderTheme = allThemes.colortheme; */
+    
+        const [colortheme, setcolortheme] = useState("main_theme");
+        const allThemes = themes;
+        
+      
+        
+        const lavenderTheme = allThemes[colortheme];
+        
     return (
 
 
@@ -301,11 +324,64 @@ const Chat = () => {
                 </div>
                 <div style={{ background: lavenderTheme.toolbox_theme }}
                     className="  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
-                    <img className='h-[30px] mf:  cursor-pointer ' src={setting} alt="" />
+                    <img onClick={() => setshowsettings(true)}
+                        className='h-[30px] mf:  cursor-pointer ' src={setting} alt="" />
                     <div className="text-white font-bold text-xl border-white cursor-pointer border-[2px] border-t-0 border-b-0 p-5 pt-0 pb-0">status</div>
                     <img onClick={() => { setshowsearch(true) }} className='h-[30px] cursor-pointer' src={search} alt="" />
 
                 </div>
+
+                {showsettings && (
+                    <div className="bg-[#444e53] flex flex-col rounded-2xl p-2 py-3 mb-7 ">
+                        <div onClick={() => setshowsettings(false)} className="flex justify-end  cursor-pointer">
+                            <img
+                                className="w-[40px]  bg-[#363838] rounded-full" src={cross} alt="Close Settings"></img>
+                        </div>
+
+                        <div className="italic text-[#d5d9db] font-bold text-[32px] text-center p-0 mt-[-20px]">Settings</div>
+
+                        <ul className='p-4 text-[#d4e1e7] font-extrabold capitalize cursor-pointer text-[20px]'>
+                            <li  onClick={() => setshowtheme(!showtheme)} 
+                                className='border-b-[1px] border-[#bacad3]'>Themes</li>
+                            {showtheme && (
+                                <ul className='p-4 text-[20px] font-extralight'>
+                                    <li onClick={()=> setcolortheme("main_theme")}
+                                     className='flex '><div className="flex justify-end h-[20px] w-[20px] rounded-full bg-[#364954] mt-0.5 mr-4 border-[2px]"></div>Default </li>
+                                    <li onClick={()=> setcolortheme("dark_theme")}
+                                     className='flex '><div className="flex justify-end h-[20px] w-[20px] border-[2px] rounded-full bg-black mt-0.5 mr-4 "></div>dark </li>
+                                    <li  onClick={()=> setcolortheme("lavender_theme")}
+                                    className='flex '><div className="flex justify-end h-[20px] w-[20px]  border-[2px] rounded-full bg-[#b794d2] mt-0.5 mr-4 "></div>lavender </li>
+                                    <li onClick={()=> setcolortheme("pink_theme")}
+                                    className='flex '><div className="flex justify-end h-[20px] w-[20px] border-[2px] rounded-full bg-[#9F004B] mt-0.5 mr-4 "></div>Rose Garnet </li>
+                                    <li onClick={()=> setcolortheme("blue_theme")}
+                                     className='flex '><div className="flex justify-end h-[20px] w-[20px]  border-[2px] rounded-full bg-[#2AB1A9] mt-0.5 mr-4 "></div>Light Sea Green </li>
+
+                                </ul>
+                            )}
+
+
+                            <li onClick={() => setshowlogout(true)} className='border-b-[1px] border-[#bacad3]'>Logout</li>
+                            {showlogout && (
+                                <div className=" p-3 rounded-3xl justify-around">
+                                    <div className="text-center   font-extralight text-[16px]  mt-4"> Are you sure you want to logout?</div>
+                                    <div className="mt-4 flex flex-row justify-around">
+                                        <div onClick={() => setshowlogout(false)}
+                                         className="bg-white p-3 rounded-2xl px-10 text-black ">no</div>
+                                        <div onClick={logout}
+                                            className="bg-red-700 p-3 rounded-2xl px-10 ">yes</div>
+                                    </div>
+                                </div>
+                            )}
+
+
+
+
+
+                        </ul>
+                    </div>
+                )}
+
+
                 <div style={{ background: lavenderTheme.chat_title_theme }}
                     className="flex flex-row justify-center   h-[30px] rounded-lg text-white font-bold text-4xl md:text-2xl lg:text-3xl   text-center py-6  mb-0">
                     <div className="mt-[-20px]">Chats</div>
@@ -361,7 +437,7 @@ const Chat = () => {
                         Object.values(People).map((user) => (
                             <div onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
                                 key={user._id}
-                                className={`cursor-pointer flex flex-row overflow-hidden  my-1.5   h-11 font-bold px-4 py-3 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? `${lavenderTheme.username_theme_selected}` : `${lavenderTheme.username_theme_not_selected}`}`}
+                                className={`cursor-pointer flex flex-row overflow-hidden  my-1   h-11 font-bold px-4 py-2.5 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? `${lavenderTheme.username_theme_selected}` : `${lavenderTheme.username_theme_not_selected}`}`}
                             >
 
                                 <div
@@ -379,11 +455,12 @@ const Chat = () => {
                     }
 
 
+
                 </div>
-                <div className="p-1 mt-4 text-center ">
+                {/*  <div className="p-1 mt-4 text-center ">
                     <button onClick={logout}
                         className='bg-[#cf2626]  text-white font-bold p-2 rounded-lg'>Logout</button>
-                </div>
+                </div> */}
             </div>
 
             <div
@@ -395,7 +472,7 @@ const Chat = () => {
                 {!!selectedUser &&
                     <div className="flex flex-col h-full border-l-[3px] border-black overflow-y-auto">
                         <div
-                            className={`${lavenderTheme.chatting_with_theme} flex flex-row items-center justify-center text-white py-3 text-center font-bold text-xl lg:text-2xl`}>
+                            className={`${lavenderTheme.chatting_with_theme} flex flex-row items-center justify-center text-white py-3 text-center font-bold text-xl lg:text-2xl sticky top-0`}>
                             <div>
                                 <img className="h-10 mt-[3px] pb-0 ml-5 md:hidden" src={backarrow} onClick={handleBackArrowClick}></img>
                             </div>
@@ -475,7 +552,7 @@ const Chat = () => {
                                 id=""
                                 className={`p-2 ${lavenderTheme.messagebox_border}  placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none `}
                             />
-                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2 px-1 mx-0 my-3 text-white rounded-lg`}>
+                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2  mr-2 my-3 text-white rounded-lg`}>
                                 <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
                                 <img className="h-7" src={attach} alt="Send" />
                             </label>
