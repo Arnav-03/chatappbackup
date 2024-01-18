@@ -1,0 +1,1762 @@
+import React, { useContext } from 'react'
+import { useEffect, useState, useRef } from 'react';
+import sendbtn from './assets/send.png';
+import chatimg from './assets/chat.png';
+import attach from './assets/attach.png';
+import { UserContext } from './UserContext';
+import Start from './Start';
+import _ from 'lodash';
+import axios from 'axios';
+
+import w1 from './assets/w6.jpg';
+import search from './assets/search.png';
+import cross from './assets/cross.png';
+import setting from './assets/setting.png';
+
+import account from './assets/account.png';
+import image from './assets/image.png';
+import file from './assets/file.png';
+
+import PeopleList from './People';
+const Chat = () => {
+
+    const [ws, setws] = useState(null);
+    const [onlinePeople, setonlinePeople] = useState({});
+    const [selectedUser, setselectedUser] = useState(null);
+    const [newMessage, setnewMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const { username, id, setid, setusername } = useContext(UserContext);
+    const [People, setPeople] = useState({});
+    const divUnderMEssage = useRef(null);
+    const [sidebarVisible, setSidebarVisible] = useState(true); // State to manage sidebar visibility
+    const [showsearch, setshowsearch] = useState(false);
+    const [storedTimestamp, setStoredTimestamp] = useState(null);
+
+    //making connection to websocket
+    useEffect(() => {
+        connectTOWs();
+    }, [selectedUser]);
+
+    function connectTOWs() {
+        const serverUrl = import.meta.env.VITE_WS_SERVER_URL;
+        const ws = new WebSocket(serverUrl);
+        setws(ws);
+
+        ws.addEventListener('message', handlemessage);
+        ws.addEventListener('close', () => {
+            setTimeout(() => {
+                console.log('trying to reconnect');
+                connectTOWs();
+            }, 1000);
+        });
+    }
+    /* 
+        function showPeople(peopleArray) {
+            const people = {};
+            peopleArray.forEach(({ userId, username }) => {
+                people[userId] = username;
+            });
+            setonlinePeople(people);
+        } */
+
+
+    useEffect(() => {
+        axios.get('/people').then(res => {
+            const PeopleArr = res.data.filter(p => p._id !== id)
+            const People = {};
+            PeopleArr.forEach(p => {
+                People[p._id] = p;
+            });
+            setPeople(People);
+        });
+
+    }, [selectedUser, id, onlinePeople, People, messages, newMessage]);
+
+
+    /* 
+        function handlemessage(e) {
+            const messageData = JSON.parse(e.data);
+    
+            if (typeof messageData === 'object' && 'online' in messageData) {
+                showPeople(messageData.online);
+            } else if ('text' in messageData) {
+                if (messageData.sender === selectedUser) {
+                    setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+                }
+            }
+        }
+     */
+    /*    function handlemessage(e) {
+           const messageData = JSON.parse(e.data);
+   
+           if (typeof messageData === 'object' && 'online' in messageData) {
+               showPeople(messageData.online);
+           } else if ('text' in messageData) {
+               if (messageData.sender === selectedUser) {
+                   setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+               } else if (messageData.recipient === id) {
+                   // Add this condition to update the state with received messages for the logged-in user
+                   setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+               }
+           }
+       } */
+    function handlemessage(e) {
+        const messageData = JSON.parse(e.data);
+
+        if (typeof messageData === 'object' && 'online' in messageData) {
+            showPeople(messageData.online);
+        } else if ('text' in messageData) {
+            const isMessageForSelectedUser = messageData.sender === selectedUser || messageData.recipient === selectedUser;
+
+            if (isMessageForSelectedUser) {
+                setMessages(prevMessages => [...prevMessages, { ...messageData, isOur: false }]);
+            }
+        }
+    }
+
+
+    /* 
+        function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+            console.log('sending');
+            ws.send(JSON.stringify({
+                recipient: selectedUser,
+                text: newMessage,
+                file,
+                createdAt: new Date(), // Manually setting createdAt
+                updatedAt: new Date() // Manually setting updatedAt
+            }));
+    
+            setnewMessage("");
+            setMessages(prev => ([...prev, {
+                text: newMessage,
+                sender: id,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true
+            }]));
+            if (file) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+    
+    
+        } */
+
+    /*     function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+            console.log('sending');
+            const createdAt = new Date(); // Get the current time for createdAt
+            const updatedAt = new Date(); // Get the current time for updatedAt
+        
+            // Send the message with the correct timestamps
+            ws.send(JSON.stringify({
+                recipient: selectedUser,
+                text: newMessage,
+                file,
+                createdAt, // Set the createdAt timestamp
+                updatedAt, // Set the updatedAt timestamp
+            }));
+        
+            setnewMessage('');
+            const newMessageData = {
+                createdAt, // Set the createdAt timestamp for the displayed message
+                updatedAt, // Set the updatedAt timestamp for the displayed message
+                text: newMessage,
+                sender: id,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true,
+               
+            };
+        
+            setMessages(prev => ([...prev, newMessageData]));
+    
+            if (file) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+        } */
+    function sendMessage(e, file = null) {
+        if (e) e.preventDefault();
+        console.log('sending');
+        const createdAt = new Date(); // Get the current time for createdAt
+        const day = createdAt.toLocaleDateString('en-US');
+        const time = createdAt.toLocaleTimeString('en-US');
+
+        // Send the message with the correct timestamps
+        ws.send(JSON.stringify({
+            day, // Set the day
+            time, // Set the time
+            recipient: selectedUser,
+            text: newMessage,
+            file,
+            createdAt, // Set the createdAt timestamp
+
+        }));
+
+        setnewMessage('');
+        const newMessageData = {
+            day, // Set the day for the displayed message
+            time, // Set the time for the displayed message
+            text: newMessage,
+            sender: id,
+            recipient: selectedUser,
+            _id: Date.now(),
+            isOur: true,
+            createdAt, // Set the createdAt timestamp for the displayed message
+
+        };
+
+        setMessages(prev => ([...prev, newMessageData]));
+        if (file) {
+            axios.get('/messages/' + selectedUser).then(res => {
+                setMessages(res.data);
+            });
+        }
+    }
+
+
+
+    function sendfile(e) {
+        const reader = new FileReader();
+        reader.readAsDataURL(e.target.files[0]);
+        reader.onload = () => {
+            sendMessage(null, {
+                name: e.target.files[0].name,
+                data: reader.result,
+            })
+        }
+    }
+
+    //scroll to bottom
+    useEffect(() => {
+
+        const div = divUnderMEssage.current;
+        if (div) {
+            div.scrollIntoView({ behaviour: 'smooth' });
+        }
+
+
+    }, [messages]);
+
+    //get messages
+    useEffect(() => {
+        if (selectedUser) {
+            axios.get('/messages/' + selectedUser).then(res => {
+                setMessages(res.data);
+            });
+        }
+    }, [selectedUser]);
+
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return ''; // If the timestamp is missing or invalid, return an empty string
+
+        const date = new Date(timestamp);
+
+        if (isNaN(date.getTime())) {
+            return ''; // If the date is invalid, return an empty string
+        }
+
+        // Get date components
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+
+        // Get time components
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    };
+
+
+    const onlinePeopleExcludingUser = { ...onlinePeople };
+    delete onlinePeopleExcludingUser[id];
+
+    const messagesWithoutDupe = _.uniqBy(messages, '_id');
+
+
+    //logout
+    function logout() {
+        axios.post('/logout').then(() => {
+            setws(null);
+            setid(null);
+            setusername(null);
+        })
+    }
+
+
+    const textStyle = { fontFamily: "'Yellowtail', cursive" };
+
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+
+    const handleSearch = async (e) => {
+        const term = e.target.value;
+        console.log(term);
+
+        setSearchTerm(term);
+
+        try {
+            const response = await axios.get(`/allpeople?searchTerm=${term}`);
+            const { exists, users } = response.data;
+
+            if (exists) {
+                // Users exist in the database
+                setSearchResults(users);
+                console.log(users);
+            } else {
+                // No matching users found
+                console.log("no user found");
+                setSearchResults([]);
+
+            }
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+        }
+        // Function to handle selecting a user from search results
+
+    };
+    const handleSelectUser = (userId) => {
+        setselectedUser(userId); // Set the selectedUser when a user is clicked
+        setSidebarVisible(false); // Hide the sidebar
+
+        // Update People list instantly
+        axios.get('/people').then(res => {
+            const PeopleArr = res.data.filter(p => p._id !== id)
+            const updatedPeople = {};
+            PeopleArr.forEach(p => {
+                updatedPeople[p._id] = p;
+            });
+
+            // Merge the updated people list with the existing one using spread operator
+            setPeople(prevPeople => ({ ...prevPeople, ...updatedPeople }));
+
+        });
+
+    };
+    const [rerenderFlag, setRerenderFlag] = useState(false);
+
+    // Function to trigger re-render every second
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // Update the flag to trigger re-render
+            setRerenderFlag(prevFlag => !prevFlag);
+        }, 1000);
+
+        return () => clearInterval(interval); // Clean up the interval on component unmount
+    }, []);
+
+    function getCurrentTimestamp() {
+        const date = new Date();
+        const day = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        return { day, time };
+    }
+    return (
+
+        <div
+
+            className='flex h-screen '>
+            <div style={{
+                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                , opacity: '1',
+            }}
+                className="bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3   h-full flex flex-col p-7 mb-10 ">
+                {/*             <div className={`bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3 h-full flex flex-col p-5 mb-10 ${sidebarVisible ? '' : 'hidden'}`}>
+ */}
+                <div
+                    className="text-center bg-[#6ac4ad] my-1 h-12 w-full p-1 mt-0 rounded-[10px]  ">
+                    <span style={textStyle} className=' mx-2 capitalize  text-[#103d32] text-4xl tracking-[.16em]'>
+                        {username}
+                    </span>
+                </div>
+                <div className=" bg-[#185546]  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
+                    <img className='h-[30px]  cursor-pointer ' src={setting} alt="" />
+                    <div className="text-white font-bold text-xl border-white cursor-pointer border-[2px] border-t-0 border-b-0 p-5 pt-0 pb-0">status</div>
+                    <img onClick={() => { setshowsearch(true) }} className='h-[30px] cursor-pointer' src={search} alt="" />
+
+                </div>
+                <div
+                    className="flex flex-row bg-[#36a085] h-[30px] rounded-lg text-white font-bold text-4xl   text-center items-center py-6 px-16 mb-0">
+                    <div className="ml-16">Chats</div>
+                    {<img className='h-10 mt-2 mx-2' src={chatimg} />}</div>
+
+
+                {/*               ******************************************
+ */}
+
+                <div>
+
+
+                    {/* search */}
+                    {showsearch && (<div >
+                        <div className="flex flex-row">
+                            <input
+                                className='bg-transparent placeholder-[#385e54] border-[1px] rounded-[10px] font-mono h-9 outline-none border-[#0b352a] w-full  p-3 pl-10 pr-10 m-2 ml-0 mb-1 text-cyan-900 font-bold'
+                                type="text"
+                                placeholder="Search by username..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e)}
+                            />
+                            <img onClick={() => { setshowsearch(false) }} className='h-[30px] border-[1px] border-l-black mt-[10px] ml-[-43px]' src={cross}></img>
+                        </div>
+
+                        {searchTerm.length > 0 && (
+                            <ul className='bg-transparent rounded-[10px] p-3 mb-2 w-full border-[1px] border-[#094133] '>
+                                {searchResults.length > 0 ? (
+                                    searchResults.map((user) => (
+                                        <li className='border-b-[2px] flex flex-row cursor-pointer border-[#1e4e42] font-mono text-[20px] font-bold text-cyan-900' key={user.id}
+                                            onClick={() => handleSelectUser(user._id)}>
+                                            <img className='h-[25px] mt-[3px] m-[3px] mr-4 ' src={account}></img>{user.username}
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className='border-b-2 border-cyan-900 font-mono pl-[100px] font-bold text-cyan-900'>No User found !!!</li>
+                                )}
+                            </ul>
+                        )}
+
+                    </div>)}
+
+                </div>
+
+
+
+
+
+                {/*                 ******************************************
+ */}
+                <div
+                    className="overflow-y-auto mm-5 h-full">
+                    {/* Display users and handle selection */}
+                    {Object.values(People).map((user) => (
+                        <div
+                            onClick={() => setselectedUser(user._id)} // Handle offline user selection
+                            key={user._id}
+                            className={`cursor-pointer flex flex-row over bg-[#49caa8] my-2  border-[#0C523F] h-11 font-bold px-4 py-3 text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#11382e] text-[#f8fffd] border-b-4   pl-6 border-[#11382e]' : 'text-[#0C523F] border-l-[5px]'}`}
+                        >
+                            <div className={` ${user._id === selectedUser ? "bg-[#f7f6f6] ml-[-4px] text-[#203b34]" : 'bg-[#0C523F]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
+                                {user.username[0]}
+                            </div>
+                            <span className='mt-[-5px]'> {user.username} </span>
+                        </div>
+                    ))}
+                </div>
+
+
+                <div className="p-1 mt-4 text-center border-t-2 border-black">
+                    <button onClick={logout}
+                        className='bg-[#cf2626]  text-white font-bold p-2 rounded-lg'>Logout</button>
+                </div>
+
+
+            </div>
+            <div style={{
+                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                , opacity: '1',
+            }}
+                className=" flex flex-col  ack  min-[320px]:hidden  md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden">
+                {/*             <div className={`flex flex-col bg-cyan-300 min-[320px]:hidden md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden ${sidebarVisible ? 'hidden' : ''}`}>
+ */}
+                {!selectedUser && <Start />}
+
+                {!!selectedUser &&
+                    <div className="flex flex-col h-full border-l-[3px] border-black overflow-y-auto">
+                        <div className="bg-[#6dd1c9] text-white py-2 text-center font-bold text-2xl">
+                            Chatting with: <span className='text-[#245e59] '>{People[selectedUser]?.username}</span>
+                        </div>
+                        <div className="flex-grow overflow-auto">
+                            <div className="flex-grow overflow-auto">
+                                {messagesWithoutDupe.map((message, index) => {
+                                    if (message.sender === selectedUser || message.recipient === selectedUser) {
+                                        return (
+                                            <div
+                                                key={message._id}
+                                                className={(message.sender == id ? 'text-right' : 'text-left')}
+                                            >
+                                                <div
+                                                    className={
+                                                        'p-2.5 m-0.5 max-w-[70%] rounded-[15px] inline-block ' +
+                                                        (message.sender === id ? 'bg-[#0C523F] text-white ' : 'bg-[#49caa8] text-[#061110] font-medium')
+                                                    }
+                                                    key={index}
+                                                >
+                                                    <div className="inline-block text-justify  font-sans text-lg break-words max-w-[100%]">
+                                                        {message.text}
+
+
+                                                        {message.file && (
+                                                            <div className="">
+                                                                <div className="underline text-center italic cursor-pointer">
+                                                                    <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file + '?t=' + Date.now()}>
+                                                                        <img
+                                                                            className='h-40 w-40 m-0 p-0 rounded-xl'
+                                                                            src={message.file.endsWith('.png') || message.file.endsWith('.jpg') || message.file.endsWith('.jpeg') ? image : file}
+                                                                            alt='cannot show!!!'
+                                                                        />
+                                                                        <div className='text-[14px]'> {message.file} </div>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div className="text-sm text-[#07141b] text-[10px]">
+                                                            {formatTimestamp(message.createdAt) ? '' : (message.day && message.time ? `${message.day} ${message.time}` : (message.day = getCurrentTimestamp().day) && (message.time = getCurrentTimestamp().time))}
+                                                        </div>
+                                                        <div className="text-sm text-[#07141b] text-[10px]">
+                                                            {formatTimestamp(message.createdAt)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })}
+                                <div ref={divUnderMEssage}></div>
+                            </div>
+                          
+                            <div ref={divUnderMEssage}></div>
+
+
+                        </div>
+
+                        <form onSubmit={sendMessage} className="flex gap-2 mx-2">
+                            <input
+                                type="text"
+                                placeholder="Type your message here..."
+                                value={newMessage}
+                                onChange={(e) => setnewMessage(e.target.value)}
+                                name=""
+                                id=""
+                                className="p-2   placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none border-[#143633]"
+                            />
+                            <label className="bg-[#245e59] cursor-pointer p-2 px-1 mx-0 my-3 text-white rounded-lg">
+                                <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
+                                <img className="h-7" src={attach} alt="Send" />
+                            </label>
+                            <button type='submit' className="bg-[#12312f] p-2 px-3 m-3 text-white rounded-lg">
+                                <img className="h-7" src={sendbtn} alt="Send" />
+                            </button>
+                        </form>
+                    </div>
+
+                }
+
+            </div>
+        </div >
+    )
+}
+
+export default Chat
+
+****************************
+
+/* const mongoose = require("mongoose");
+
+const MessageSchema = new mongoose.Schema({
+
+    sender:{type: mongoose.Schema.Types.ObjectId,ref: 'User'},
+    recipient:{type: mongoose.Schema.Types.ObjectId,ref: 'User'},
+    text:String,
+    file:String,
+
+},{timestamps:true});
+
+const MessageModel = mongoose.model('Message', MessageSchema);
+module.exports = MessageModel; */
+
+/* const mongoose = require("mongoose");
+
+const MessageSchema = new mongoose.Schema({
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    text: String,
+    file: String,
+    createdAt: { type: Date, default: Date.now }, // Manually define createdAt field
+    updatedAt: { type: Date, default: Date.now } // Manually define updatedAt field
+});
+
+const MessageModel = mongoose.model('Message', MessageSchema);
+module.exports = MessageModel; */
+const mongoose = require("mongoose");
+
+const MessageSchema = new mongoose.Schema({
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    text: String,
+    day: String, // Separate field for day
+    time: String, // Separate field for time
+    file: String,
+    createdAt: { type: Date, default: Date.now }, // Manually define createdAt field
+    updatedAt: { type: Date, default: Date.now } // Manually define updatedAt field
+});
+
+// Pre-hook to populate day and time before saving
+MessageSchema.pre('save', function (next) {
+    const date = new Date(this.createdAt);
+    this.day = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    this.time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    next();
+});
+
+const MessageModel = mongoose.model('Message', MessageSchema);
+module.exports = MessageModel;
+const express = require("express");
+const dotenv = require("dotenv");
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const cors = require('cors')
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
+const ws = require("ws");
+const Message = require('./models/Message');
+const User = require('./models/User');
+const fs = require('fs');
+
+
+dotenv.config();
+
+mongoose.connect(process.env.MONGO_URL);
+
+const jwtSecret = process.env.JWT_SECRET;
+const bcryptSalt = bcrypt.genSaltSync(10);
+const app = express();
+
+app.use('/api/uploads', express.static(__dirname + '/uploads/'));
+
+console.log(process.env.CLIENT_URL);
+
+const corsOptions = {
+    credentials: true,
+    origin: process.env.CLIENT_URL,
+};
+
+app.use(express.json());
+app.use(cookieParser());
+app.use(cors(corsOptions));
+
+async function getUserDataFromRequest(req) {
+    return new Promise((resolve, reject) => {
+        const token = req.cookies?.token;
+        if (token) {
+            jwt.verify(token, jwtSecret, {}, (err, userData) => {
+                if (err) throw err;
+                resolve(userData);
+            });
+        } else {
+            reject('no token');
+        }
+    })
+
+}
+
+app.get('/api/test', (req, res) => {
+    res.json('test hehhee');
+});
+
+app.get('/api/messages/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const userData = await getUserDataFromRequest(req);
+    const ourUSerId = userData.userId;
+    const messages = await Message.find({
+        sender: { $in: [userId, ourUSerId] },
+        recipient: { $in: [userId, ourUSerId] },
+    }).sort({ createdAt: 1 });
+    res.json(messages);
+
+});
+
+
+/* app.get('/api/people', async (req,res)=>{
+    const users = await User.find({},{'_id':1,'username':1});
+    res.json(users);
+}) */
+app.get('/api/people', async (req, res) => {
+    try {
+        const userData = await getUserDataFromRequest(req);
+        const ourUserId = userData.userId;
+
+        const messagesSentByUser = await Message.find({ sender: ourUserId }, { recipient: 1, createdAt: 1 })
+            .sort({ createdAt: -1 }); // Sorting by createdAt in descending order
+
+        const messagesReceivedByUser = await Message.find({ recipient: ourUserId }, { sender: 1, createdAt: 1 })
+            .sort({ createdAt: -1 }); // Sorting by createdAt in descending order
+
+        const usersSentTo = messagesSentByUser.map(message => message.recipient.toString());
+        const usersReceivedFrom = messagesReceivedByUser.map(message => message.sender.toString());
+
+        // Combine and deduplicate the user IDs
+        const uniqueUserIds = [...new Set([...usersSentTo, ...usersReceivedFrom])];
+
+        // Fetch user details for the unique user IDs
+        const users = await User.find({ _id: { $in: uniqueUserIds } }, { _id: 1, username: 1 });
+
+        // Sort the users based on interaction timestamp (latest to oldest)
+        const usersSortedByTime = users.sort((a, b) => {
+            const lastInteractionTimeA = Math.max(
+                messagesSentByUser.find(msg => msg.recipient.toString() === a._id.toString())?.createdAt || 0,
+                messagesReceivedByUser.find(msg => msg.sender.toString() === a._id.toString())?.createdAt || 0
+            );
+
+            const lastInteractionTimeB = Math.max(
+                messagesSentByUser.find(msg => msg.recipient.toString() === b._id.toString())?.createdAt || 0,
+                messagesReceivedByUser.find(msg => msg.sender.toString() === b._id.toString())?.createdAt || 0
+            );
+
+            return lastInteractionTimeB - lastInteractionTimeA;
+        });
+
+        res.json(usersSortedByTime);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+
+app.get('/api/allpeople', async (req, res) => {
+    const searchTerm = req.query.searchTerm;
+
+    try {
+        if (searchTerm && searchTerm.length > 0) {
+            // Use a regular expression to perform a case-insensitive search for starting letters only
+            const users = await User.find(
+                { username: { $regex: new RegExp('^' + searchTerm, 'i') } },
+                { _id: 1, username: 1 }
+            );
+
+            if (users.length > 0) {
+                // Users matching the search term found
+                res.json({ exists: true, users });
+            } else {
+                // No matching users found
+                res.json({ exists: false, users: [] });
+            }
+        } else {
+            // No search term provided
+            res.json({ exists: false, users: [] });
+        }
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+
+
+
+app.get('/api/profile', (req, res) => {
+    const token = req.cookies?.token;
+    if (token) {
+        jwt.verify(token, jwtSecret, {}, (err, userData) => {
+            if (err) throw err;
+            res.json(userData);
+        });
+    } else {
+        res.status(401).json('no token');
+    }
+});
+
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    const foundUser = await User.findOne({ username });
+    if (foundUser) {
+        const passOk = bcrypt.compareSync(password, foundUser.password);
+        if (passOk) {
+            jwt.sign({ userId: foundUser._id, username }, jwtSecret, {}, (err, token) => {
+                res.cookie('token', token, { sameSite: 'none', secure: true }).json({
+                    id: foundUser._id,
+                })
+            });
+        }
+    }
+});
+
+
+app.post('/api/logout', (req, res) => {
+
+    res.cookie('token', '', { sameSite: 'none', secure: true }).json('logout');
+});
+
+
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
+        const createdUser = await User.create({
+            username: username,
+            password: hashedPassword,
+        });
+
+        jwt.sign({ userId: createdUser._id, username }, jwtSecret, {}, (err, token) => {
+            if (err) throw err;
+            res.cookie('token', token, { sameSite: 'none', secure: true }).status(201).json({
+                id: createdUser._id,
+            });
+        })
+    } catch (err) {
+        if (err) throw err;
+    }
+
+});
+
+
+
+
+
+const server = app.listen(4040);
+
+
+
+
+const wss = new ws.WebSocketServer({ server });
+wss.on('connection', (connection, req) => {
+
+    function messageAboutOnlinePeople() {
+        [...wss.clients].forEach(client => {
+            client.send(JSON.stringify({
+                online: [...wss.clients].map(c => ({ userId: c.userId, username: c.username }))
+
+            }
+            ));
+        });
+
+    }
+
+    connection.on('pong', () => {
+    });
+
+    const cookies = req.headers.cookie;
+    if (cookies) {
+        const tokencookieString = cookies.split(';').find(str => str.startsWith('token='));
+        if (tokencookieString) {
+            const token = tokencookieString.split('=')[1];
+            if (token) {
+                jwt.verify(token, jwtSecret, {}, (err, userData) => {
+                    if (err) throw err;
+                    const { userId, username } = userData;
+                    connection.userId = userId;
+                    connection.username = username;
+
+                });
+            }
+        }
+    }
+
+    connection.on('message', async (message) => {
+        const messageData = JSON.parse(message.toString());
+        const { recipient, text, file } = messageData;
+        let filename = null;
+
+        if (file) {
+            const parts = file.name.split('.');
+            const ext = parts[parts.length - 1];
+            filename = Date.now() + '.' + ext;
+            const path = __dirname + '/uploads/' + filename;
+
+            /*        const path =  'uploads/' + filename;
+             */
+            /*         const bufferData = new Buffer(file.data.split(',')[1], 'base64');
+             */
+            const bufferData = Buffer.from(file.data.split(',')[1], 'base64'); // Use Buffer.from() instead
+
+            fs.writeFile(path, bufferData, (err) => {
+                if (err) {
+                    console.error('Error saving file:', err);
+                } else {
+                    console.log('File saved at:', path);
+                }
+            });
+        }
+
+        if (recipient && (text || file)) {
+            const MessageDoc = await Message.create({
+                sender: connection.userId,
+                recipient,
+                text,
+                file: file ? filename : null,
+
+            });
+            [...wss.clients]
+                .filter(c => c.userId === recipient)
+                .forEach(c => c.send(JSON.stringify({
+                    text,
+                    sender: connection.userId,
+                    recipient,
+                    file: file ? filename : null,
+
+                    _id: MessageDoc._id,
+                })));
+        }
+    });
+
+
+
+
+    messageAboutOnlinePeople();
+
+});
+
+wss.on('close', data => {
+    console.log('disconnect', data);
+})
+import axios from 'axios';
+import React from 'react'
+import { useContext } from 'react';
+import { useState } from 'react'
+import { UserContext } from './UserContext';
+import { useRef } from 'react';
+
+
+import w1 from './assets/w6.jpg';
+import back from './assets/back.png';
+
+const Register = () => {
+
+
+
+    const { setusername: setLoggedInUsername, setid } = useContext(UserContext);
+
+    const [username, setusername] = useState("");
+    const [password, setpassword] = useState("");
+    const [IsloginOrRegister, setIsloginOrRegister] = useState("login");
+
+    const [loginStatus, setLoginStatus] = useState(false); // Use boolean instead of an empty string
+    const [loginerror, setError] = useState(false); // Use boolean instead of an empty string
+    const [show, setshow] = useState(true);
+
+    /*   async function handlesubmit(e) {
+          e.preventDefault();
+          const url = IsloginOrRegister === "register" ? 'register' : 'login';
+          const { data } = await axios.post(`/${url}`, { username, password });
+          setLoggedInUsername(username);
+          setid(data.id);
+      } */
+
+    async function handlesubmit(e) {
+        e.preventDefault();
+        const url = IsloginOrRegister === "register" ? 'register' : 'login';
+
+        let loginSuccess = false;
+
+        try {
+            const { data } = await axios.post(`/${url}`, { username, password });
+            setLoggedInUsername(username);
+            setid(data.id);
+            loginSuccess = true;
+            console.log(error);
+        } catch (err) {
+            console.log(err);
+        }
+
+        if (loginSuccess) {
+            setLoginStatus(true); // Set loginStatus to true when successfully logging in
+            setError(false); // No error when successful
+        } else {
+            setError(true); // Set error to true for invalid username or password
+            setLoginStatus(false); // Set loginStatus to false due to login failure
+        }
+    }
+
+
+    const mainstyle = {
+        fontFamily: "'Major Mono Display', monospace",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textShadow: '3px 3px #d1a1a1',
+
+    }
+
+    const textStyle = {
+        fontFamily: "'Qwigley', cursive",
+    };
+
+    const scrollRef = useRef(null);
+
+
+    const handleButtonClick = () => {
+        setshow(false);
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+    return (
+        <div className="">
+
+
+            {show && (
+                <div className="flex  flex-col p-5 relative h-screen"
+                    style={{
+                        backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                        , opacity: '1',
+                    }}
+                >
+
+                    <div style={mainstyle} className=" flex mt-[250px] tracking-in-expand  text-[#a85a5a] text-[47px]   sm:text-6xl md:text-7xl lg:text-8xl"
+                    >KASHITOKARU</div>
+                    <div className="text-[#13090a]  font-bold text-[33px]  sm:text-4xl md:text-4xl lg:text-5xl text-center p-0 mt-[50px] " style={textStyle}>
+                        The Art of Conversation,<br/> Redefined...
+                    </div>
+
+
+                    <div className='flex justify-end m-0 mt-[100px] mr-[20px] lg:mt-[2px] lg:mr-[150px]'>
+                        <button class="button" onClick={handleButtonClick} >
+                            get started
+                        </button>
+                    </div>
+                </div>
+            )}
+
+
+
+            {!show && (
+                <div ref={scrollRef}
+                    style={{
+                        backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                        , opacity: '1',
+                    }}
+                    className='bg-cyan-400 h-screen   p-0 m-0  flex flex-col  '>
+                    <div className=""><img onClick={() => { setshow(true) }}
+                        className='h-10 mt-[200px] ml-[20px] lg:ml-[400px]  cursor-pointer'
+                        src={back} alt="" /></div>
+
+
+                    <form  
+                    className='w-100 backg mx-auto' onSubmit={handlesubmit}>
+                        <input type='text' onChange={(e) => setusername(e.target.value)} placeholder='username' value={username}
+                            className='block w-full p-2 mb-5' />
+                        <input type='password' onChange={(e) => setpassword(e.target.value)} placeholder='password' value={password}
+                            className='block w-full p-2 mb-5' />
+                        <button className='bg-cyan-500 text-white block w-full rounded p-2 mb-5'>
+                            {(IsloginOrRegister == "register" ? "Register" : "Login")}
+                        </button>
+                        <div>
+
+                            {IsloginOrRegister === "register" && (
+                                <div> Already a member?
+                                    <button className='text-fuchsia-950 underline font-bold ml-2' onClick={() => setIsloginOrRegister('login')}>
+                                        Login here
+                                    </button>
+                                </div>
+                            )}
+                            {IsloginOrRegister === "login" && (
+                                <div> Don't have an account?
+                                    <button className='text-fuchsia-950 underline font-bold outline-none ml-2' onClick={() => setIsloginOrRegister('register')}>
+                                        Register
+                                    </button>
+
+                                </div>
+                            )}
+
+                        </div>
+
+                        {loginStatus && <div className="text-green-600">Logging in...</div>}
+                        {loginerror && <div className="text-red-600">Invalid username or password</div>}
+
+                    </form>
+                </div>
+            )}
+
+
+
+
+
+
+
+
+
+
+
+
+        </div>
+
+    )
+}
+
+export default Register
+import React, { useContext } from 'react'
+import { useEffect, useState, useRef } from 'react';
+import sendbtn from './assets/send.png';
+import chatimg from './assets/chat.png';
+import attach from './assets/attach.png';
+import { UserContext } from './UserContext';
+import Start from './Start';
+import _ from 'lodash';
+import axios from 'axios';
+
+import w1 from './assets/w6.jpg';
+import search from './assets/search.png';
+import cross from './assets/cross.png';
+import setting from './assets/setting.png';
+
+import account from './assets/account.png';
+import image from './assets/image.png';
+import file from './assets/file.png';
+
+import PeopleList from './People';
+const Chat = () => {
+
+    const [ws, setws] = useState(null);
+    const [onlinePeople, setonlinePeople] = useState({});
+    const [selectedUser, setselectedUser] = useState(null);
+    const [newMessage, setnewMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const { username, id, setid, setusername } = useContext(UserContext);
+    const [People, setPeople] = useState({});
+    const divUnderMEssage = useRef(null);
+    const [sidebarVisible, setSidebarVisible] = useState(true); // State to manage sidebar visibility
+    const [showsearch, setshowsearch] = useState(false);
+    const [storedTimestamp, setStoredTimestamp] = useState(null);
+
+    //making connection to websocket
+    useEffect(() => {
+        connectTOWs();
+    }, [selectedUser]);
+
+    function connectTOWs() {
+        const serverUrl = import.meta.env.VITE_WS_SERVER_URL;
+        const ws = new WebSocket(serverUrl);
+        setws(ws);
+
+        ws.addEventListener('message', handlemessage);
+        ws.addEventListener('close', () => {
+            setTimeout(() => {
+                console.log('trying to reconnect');
+                connectTOWs();
+            }, 1000);
+        });
+    }
+    /* 
+        function showPeople(peopleArray) {
+            const people = {};
+            peopleArray.forEach(({ userId, username }) => {
+                people[userId] = username;
+            });
+            setonlinePeople(people);
+        } */
+
+
+    useEffect(() => {
+        axios.get('/people').then(res => {
+            const PeopleArr = res.data.filter(p => p._id !== id)
+            const People = {};
+            PeopleArr.forEach(p => {
+                People[p._id] = p;
+            });
+            setPeople(People);
+        });
+
+    }, [selectedUser, id, onlinePeople, People, messages, newMessage]);
+
+
+    /* 
+        function handlemessage(e) {
+            const messageData = JSON.parse(e.data);
+    
+            if (typeof messageData === 'object' && 'online' in messageData) {
+                showPeople(messageData.online);
+            } else if ('text' in messageData) {
+                if (messageData.sender === selectedUser) {
+                    setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+                }
+            }
+        }
+     */
+    /*    function handlemessage(e) {
+           const messageData = JSON.parse(e.data);
+   
+           if (typeof messageData === 'object' && 'online' in messageData) {
+               showPeople(messageData.online);
+           } else if ('text' in messageData) {
+               if (messageData.sender === selectedUser) {
+                   setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+               } else if (messageData.recipient === id) {
+                   // Add this condition to update the state with received messages for the logged-in user
+                   setMessages(prev => ([...prev, { ...messageData, isOur: false }]));
+               }
+           }
+       } */
+    function handlemessage(e) {
+        const messageData = JSON.parse(e.data);
+
+        if (typeof messageData === 'object' && 'online' in messageData) {
+            showPeople(messageData.online);
+        } else if ('text' in messageData) {
+            const isMessageForSelectedUser = messageData.sender === selectedUser || messageData.recipient === selectedUser;
+
+            if (isMessageForSelectedUser) {
+                setMessages(prevMessages => [...prevMessages, { ...messageData, isOur: false }]);
+            }
+        }
+    }
+
+
+    /* 
+        function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+            console.log('sending');
+            ws.send(JSON.stringify({
+                recipient: selectedUser,
+                text: newMessage,
+                file,
+                createdAt: new Date(), // Manually setting createdAt
+                updatedAt: new Date() // Manually setting updatedAt
+            }));
+    
+            setnewMessage("");
+            setMessages(prev => ([...prev, {
+                text: newMessage,
+                sender: id,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true
+            }]));
+            if (file) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+    
+    
+        } */
+
+    /*     function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+            console.log('sending');
+            const createdAt = new Date(); // Get the current time for createdAt
+            const updatedAt = new Date(); // Get the current time for updatedAt
+        
+            // Send the message with the correct timestamps
+            ws.send(JSON.stringify({
+                recipient: selectedUser,
+                text: newMessage,
+                file,
+                createdAt, // Set the createdAt timestamp
+                updatedAt, // Set the updatedAt timestamp
+            }));
+        
+            setnewMessage('');
+            const newMessageData = {
+                createdAt, // Set the createdAt timestamp for the displayed message
+                updatedAt, // Set the updatedAt timestamp for the displayed message
+                text: newMessage,
+                sender: id,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true,
+               
+            };
+        
+            setMessages(prev => ([...prev, newMessageData]));
+    
+            if (file) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+        } */
+    function sendMessage(e, file = null) {
+        if (e) e.preventDefault();
+        console.log('sending');
+        const createdAt = new Date(); // Get the current time for createdAt
+        const day = createdAt.toLocaleDateString('en-US');
+        const time = createdAt.toLocaleTimeString('en-US');
+
+        // Send the message with the correct timestamps
+        ws.send(JSON.stringify({
+            day, // Set the day
+            time, // Set the time
+            recipient: selectedUser,
+            text: newMessage,
+            file,
+            createdAt, // Set the createdAt timestamp
+
+        }));
+
+        setnewMessage('');
+        const newMessageData = {
+            day, // Set the day for the displayed message
+            time, // Set the time for the displayed message
+            text: newMessage,
+            sender: id,
+            recipient: selectedUser,
+            _id: Date.now(),
+            isOur: true,
+            createdAt, // Set the createdAt timestamp for the displayed message
+
+        };
+
+        setMessages(prev => ([...prev, newMessageData]));
+        if (file) {
+            axios.get('/messages/' + selectedUser).then(res => {
+                setMessages(res.data);
+            });
+        }
+    }
+
+
+
+    function sendfile(e) {
+        const reader = new FileReader();
+        reader.readAsDataURL(e.target.files[0]);
+        reader.onload = () => {
+            sendMessage(null, {
+                name: e.target.files[0].name,
+                data: reader.result,
+            })
+        }
+    }
+
+    //scroll to bottom
+    useEffect(() => {
+
+        const div = divUnderMEssage.current;
+        if (div) {
+            div.scrollIntoView({ behaviour: 'smooth' });
+        }
+
+
+    }, [messages]);
+
+    //get messages
+    useEffect(() => {
+        if (selectedUser) {
+            axios.get('/messages/' + selectedUser).then(res => {
+                setMessages(res.data);
+            });
+        }
+    }, [selectedUser]);
+
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return ''; // If the timestamp is missing or invalid, return an empty string
+
+        const date = new Date(timestamp);
+
+        if (isNaN(date.getTime())) {
+            return ''; // If the date is invalid, return an empty string
+        }
+
+        // Get date components
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+
+        // Get time components
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    };
+
+
+    const onlinePeopleExcludingUser = { ...onlinePeople };
+    delete onlinePeopleExcludingUser[id];
+
+    const messagesWithoutDupe = _.uniqBy(messages, '_id');
+
+
+    //logout
+    function logout() {
+        axios.post('/logout').then(() => {
+            setws(null);
+            setid(null);
+            setusername(null);
+        })
+    }
+
+
+    const textStyle = { fontFamily: "'Yellowtail', cursive" };
+
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+
+    const handleSearch = async (e) => {
+        const term = e.target.value;
+        console.log(term);
+
+        setSearchTerm(term);
+
+        try {
+            const response = await axios.get(`/allpeople?searchTerm=${term}`);
+            const { exists, users } = response.data;
+
+            if (exists) {
+                // Users exist in the database
+                setSearchResults(users);
+                console.log(users);
+            } else {
+                // No matching users found
+                console.log("no user found");
+                setSearchResults([]);
+
+            }
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+        }
+        // Function to handle selecting a user from search results
+
+    };
+    const handleSelectUser = (userId) => {
+        setselectedUser(userId); // Set the selectedUser when a user is clicked
+        setSidebarVisible(false); // Hide the sidebar
+
+        // Update People list instantly
+        axios.get('/people').then(res => {
+            const PeopleArr = res.data.filter(p => p._id !== id)
+            const updatedPeople = {};
+            PeopleArr.forEach(p => {
+                updatedPeople[p._id] = p;
+            });
+
+            // Merge the updated people list with the existing one using spread operator
+            setPeople(prevPeople => ({ ...prevPeople, ...updatedPeople }));
+
+        });
+
+    };
+    const [rerenderFlag, setRerenderFlag] = useState(false);
+
+    // Function to trigger re-render every second
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // Update the flag to trigger re-render
+            setRerenderFlag(prevFlag => !prevFlag);
+        }, 1000);
+
+        return () => clearInterval(interval); // Clean up the interval on component unmount
+    }, []);
+
+    function getCurrentTimestamp() {
+        const date = new Date();
+        const day = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        return { day, time };
+    }
+    return (
+
+        <div
+
+            className='flex h-screen '>
+            <div style={{
+                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                , opacity: '1',
+            }}
+                className="bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3   h-full flex flex-col p-7 mb-10 ">
+                {/*             <div className={`bg-cyan-100 min-[320px]:w-full sm:w-full lg:w-1/3 md:w-1/3 h-full flex flex-col p-5 mb-10 ${sidebarVisible ? '' : 'hidden'}`}>
+ */}
+                <div
+                    className="text-center bg-[#6ac4ad] my-1 h-12 w-full p-1 mt-0 rounded-[10px]  ">
+                    <span style={textStyle} className=' mx-2 capitalize  text-[#103d32] text-4xl tracking-[.16em]'>
+                        {username}
+                    </span>
+                </div>
+                <div className=" bg-[#185546]  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
+                    <img className='h-[30px]  cursor-pointer ' src={setting} alt="" />
+                    <div className="text-white font-bold text-xl border-white cursor-pointer border-[2px] border-t-0 border-b-0 p-5 pt-0 pb-0">status</div>
+                    <img onClick={() => { setshowsearch(true) }} className='h-[30px] cursor-pointer' src={search} alt="" />
+
+                </div>
+                <div
+                    className="flex flex-row bg-[#36a085] h-[30px] rounded-lg text-white font-bold text-4xl   text-center items-center py-6 px-16 mb-0">
+                    <div className="ml-16">Chats</div>
+                    {<img className='h-10 mt-2 mx-2' src={chatimg} />}</div>
+
+
+                {/*               ******************************************
+ */}
+
+                <div>
+
+
+                    {/* search */}
+                    {showsearch && (<div >
+                        <div className="flex flex-row">
+                            <input
+                                className='bg-transparent placeholder-[#385e54] border-[1px] rounded-[10px] font-mono h-9 outline-none border-[#0b352a] w-full  p-3 pl-10 pr-10 m-2 ml-0 mb-1 text-cyan-900 font-bold'
+                                type="text"
+                                placeholder="Search by username..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e)}
+                            />
+                            <img onClick={() => { setshowsearch(false) }} className='h-[30px] border-[1px] border-l-black mt-[10px] ml-[-43px]' src={cross}></img>
+                        </div>
+
+                        {searchTerm.length > 0 && (
+                            <ul className='bg-transparent rounded-[10px] p-3 mb-2 w-full border-[1px] border-[#094133] '>
+                                {searchResults.length > 0 ? (
+                                    searchResults.map((user) => (
+                                        <li className='border-b-[2px] flex flex-row cursor-pointer border-[#1e4e42] font-mono text-[20px] font-bold text-cyan-900' key={user.id}
+                                            onClick={() => handleSelectUser(user._id)}>
+                                            <img className='h-[25px] mt-[3px] m-[3px] mr-4 ' src={account}></img>{user.username}
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className='border-b-2 border-cyan-900 font-mono pl-[100px] font-bold text-cyan-900'>No User found !!!</li>
+                                )}
+                            </ul>
+                        )}
+
+                    </div>)}
+
+                </div>
+
+
+
+
+
+                {/*                 ******************************************
+ */}
+                <div
+                    className="overflow-y-auto mm-5 h-full">
+                    {/* Display users and handle selection */}
+                    {Object.values(People).map((user) => (
+                        <div
+                            onClick={() => setselectedUser(user._id)} // Handle offline user selection
+                            key={user._id}
+                            className={`cursor-pointer flex flex-row over bg-[#49caa8] my-2  border-[#0C523F] h-11 font-bold px-4 py-3 text-xl  rounded-r-[10px] ${user._id === selectedUser ? ' bg-[#11382e] text-[#f8fffd] border-b-4   pl-6 border-[#11382e]' : 'text-[#0C523F] border-l-[5px]'}`}
+                        >
+                            <div className={` ${user._id === selectedUser ? "bg-[#f7f6f6] ml-[-4px] text-[#203b34]" : 'bg-[#0C523F]'}  h-8 capitalize w-8 rounded-full text-white px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}>
+                                {user.username[0]}
+                            </div>
+                            <span className='mt-[-5px]'> {user.username} </span>
+                        </div>
+                    ))}
+                </div>
+
+
+                <div className="p-1 mt-4 text-center border-t-2 border-black">
+                    <button onClick={logout}
+                        className='bg-[#cf2626]  text-white font-bold p-2 rounded-lg'>Logout</button>
+                </div>
+
+
+            </div>
+            <div style={{
+                backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+                , opacity: '1',
+            }}
+                className=" flex flex-col  ack  min-[320px]:hidden  md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden">
+                {/*             <div className={`flex flex-col bg-cyan-300 min-[320px]:hidden md:block md:w-2/3 lg:block lg:w-2/3 overflow-hidden ${sidebarVisible ? 'hidden' : ''}`}>
+ */}
+                {!selectedUser && <Start />}
+
+                {!!selectedUser &&
+                    <div className="flex flex-col h-full border-l-[3px] border-black overflow-y-auto">
+                        <div className="bg-[#6dd1c9] text-white py-2 text-center font-bold text-2xl">
+                            Chatting with: <span className='text-[#245e59] '>{People[selectedUser]?.username}</span>
+                        </div>
+                        <div className="flex-grow overflow-auto">
+                            <div className="flex-grow overflow-auto">
+                                {messagesWithoutDupe.map((message, index) => {
+                                    if (message.sender === selectedUser || message.recipient === selectedUser) {
+                                        return (
+                                            <div
+                                                key={message._id}
+                                                className={(message.sender == id ? 'text-right' : 'text-left')}
+                                            >
+                                                <div
+                                                    className={
+                                                        'p-2.5 m-0.5 max-w-[70%] rounded-[15px] inline-block ' +
+                                                        (message.sender === id ? 'bg-[#0C523F] text-white ' : 'bg-[#49caa8] text-[#061110] font-medium')
+                                                    }
+                                                    key={index}
+                                                >
+                                                    <div className="inline-block text-justify  font-sans text-lg break-words max-w-[100%]">
+                                                        {message.text}
+
+
+                                                        {message.file && (
+                                                            <div className="">
+                                                                <div className="underline text-center italic cursor-pointer">
+                                                                    <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file + '?t=' + Date.now()}>
+                                                                        <img
+                                                                            className='h-40 w-40 m-0 p-0 rounded-xl'
+                                                                            src={message.file.endsWith('.png') || message.file.endsWith('.jpg') || message.file.endsWith('.jpeg') ? image : file}
+                                                                            alt='cannot show!!!'
+                                                                        />
+                                                                        <div className='text-[14px]'> {message.file} </div>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div className="text-sm text-[#07141b] text-[10px]">
+                                                            {formatTimestamp(message.createdAt) ? '' : (message.day && message.time ? `${message.day} ${message.time}` : (message.day = getCurrentTimestamp().day) && (message.time = getCurrentTimestamp().time))}
+                                                        </div>
+                                                        <div className="text-sm text-[#07141b] text-[10px]">
+                                                            {formatTimestamp(message.createdAt)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })}
+                                <div ref={divUnderMEssage}></div>
+                            </div>
+                          
+                            <div ref={divUnderMEssage}></div>
+
+
+                        </div>
+
+                        <form onSubmit={sendMessage} className="flex gap-2 mx-2">
+                            <input
+                                type="text"
+                                placeholder="Type your message here..."
+                                value={newMessage}
+                                onChange={(e) => setnewMessage(e.target.value)}
+                                name=""
+                                id=""
+                                className="p-2   placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none border-[#143633]"
+                            />
+                            <label className="bg-[#245e59] cursor-pointer p-2 px-1 mx-0 my-3 text-white rounded-lg">
+                                <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
+                                <img className="h-7" src={attach} alt="Send" />
+                            </label>
+                            <button type='submit' className="bg-[#12312f] p-2 px-3 m-3 text-white rounded-lg">
+                                <img className="h-7" src={sendbtn} alt="Send" />
+                            </button>
+                        </form>
+                    </div>
+
+                }
+
+            </div>
+        </div >
+    )
+}
+
+export default Chat
+
+@import url('https://fonts.googleapis.com/css2?family=Qwigley&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Yellowtail&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Young+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro');
+@import url('https://fonts.googleapis.com/css2?family=Splash&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amatic+SC&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@keyframes flicker {
+  0%, 49.9% {
+opacity: 0; }
+  50%, 100% {
+  }
+}
+.flicker{
+  animation: flicker 1.3s infinite;
+
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 6px;
+  }
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #67e8f9;
+    background: none;
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #083966;
+    border-radius: 5px;
+
+  }
+
+  .button {
+    height: 50px;
+    width: 180px;
+    font-size: 30px;
+    background-color: transparent;
+    cursor: pointer;
+    border: 1px solid #a85a5a;
+
+    border-radius: 15px;
+    color: rgb(168, 90, 90);
+    transition: all 0.5s ease-in-out;
+    font-family: 'Splash', serif;
+    letter-spacing: 3px;
+  }
+  .button:hover{
+    background-color: rgb(168, 90, 90);
+    color: azure;
+    scale: 1.05;
+  }
+
+  .tracking-in-expand{animation:tracking-in-expand 2s cubic-bezier(.215,.61,.355,1.000) both}
+ 
+@keyframes tracking-in-expand{0%{letter-spacing:-.5em;opacity:0}40%{opacity:.6}100%{opacity:1}}
+
+@keyframes circle-in-hesitate {
+  0% {
+    clip-path: circle(0%);
+  }
+  40% {
+    clip-path: circle(40%);
+  }
+  100% {
+    clip-path: circle(125%);
+  }
+}
+.ani{
+  animation: 2.5s cubic-bezier(.25, 1, .30, 1) circle-in-hesitate both;
+
+}
+
+.backg{
+/*   border: 2px solid #854343;
+ */  padding: 50px;
+
+}
+.backg input{
+  border-radius: 5px;
+  border: 1px solid #854343;
+  outline: none;
+}import React from 'react';
+import w1 from './assets/w6.jpg';
+import arrowc from './assets/arrowc.png';
+const Start = () => {
+
+
+  const textStyle = {
+    fontFamily: "'Qwigley', cursive",
+  };
+  const textStyle2 = {
+   fontFamily:"'Major Mono Display', monospace",
+  };
+  const startchat={
+    fontFamily: "'Amatic SC', sans-serif",
+
+  }
+  return (
+    <div   style={{
+      backgroundImage: `url(${w1})`, backgroundSize: 'cover', filter: 'blur(0px)'
+      , opacity: '1',
+  }}
+     className='bg-cyan-500 border-l-2 border-[#a85a5a] h-screen flex flex-col items-center justify-center'>
+      <div style={textStyle2} className="text-[#a85a5a] text-6xl mb-5"> KASHITOKARU</div>
+      <div className="text-[#13090a] text-4xl text-center " style={textStyle}>
+        The Art of Conversation, Redefined...
+      </div>
+      <div className="text-[60px] flex flex-row flicker text-[#378370] " style={startchat}>
+        <img className='h-[60px] rotate-180 mt-[18px] ' src={arrowc}></img>
+        <div className="ml-4">start a chat</div></div>
+    </div>
+  );
+};
+
+export default Start;

@@ -93,14 +93,14 @@ const Chat = () => {
         }
     }
 
-
+/* 
     function sendMessage(e, file = null) {
         if (e) e.preventDefault();
         // Check if the newMessage is empty or contains only whitespace
-        if (!newMessage.trim()) {
+    if (!newMessage.trim()) {
             // Do not send empty messages
             return;
-        }
+        } 
         const createdAt = new Date(); // Get the current time for createdAt
         const day = createdAt.toLocaleDateString('en-US');
         const time = createdAt.toLocaleTimeString('en-US');
@@ -138,8 +138,66 @@ const Chat = () => {
             });
         }
     }
-
-
+ */
+    function sendMessage(e, file = null) {
+        if (e) e.preventDefault();
+    
+        const createdAt = new Date();
+        const day = createdAt.toLocaleDateString('en-US');
+        const time = createdAt.toLocaleTimeString('en-US');
+    
+        // Check if there is a file
+        if (file) {
+            // Send the message with the file
+            ws.send(JSON.stringify({
+                day,
+                time,
+                recipient: selectedUser,
+                file,
+                isRead: false,
+                createdAt,
+            }));
+    
+            // Update state and fetch messages if needed
+            setnewMessage('');
+            axios.get('/messages/' + selectedUser).then(res => {
+                setMessages(res.data);
+            });
+        } else {
+            // Check if the newMessage is empty or contains only whitespace
+            if (!newMessage.trim()) {
+                // Do not send empty messages
+                return;
+            }
+    
+            // Send the message with the correct timestamps
+            ws.send(JSON.stringify({
+                day,
+                time,
+                recipient: selectedUser,
+                text: newMessage,
+                isRead: false,
+                createdAt,
+            }));
+    
+            // Update state with the new message data
+            setnewMessage('');
+            const newMessageData = {
+                day,
+                time,
+                text: newMessage,
+                sender: id,
+                isRead: false,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true,
+                createdAt,
+            };
+    
+            setMessages(prev => ([...prev, newMessageData]));
+        }
+    }
+    
 
     function sendfile(e) {
         const reader = new FileReader();
