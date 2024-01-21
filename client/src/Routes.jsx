@@ -12,5 +12,4 @@ const Routes = () => {
     <Register />
   )
 }
-
 export default Routes

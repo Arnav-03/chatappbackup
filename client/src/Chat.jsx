@@ -8,7 +8,6 @@ import Start from './Start';
 import _ from 'lodash';
 import axios from 'axios';
 import * as themes from './Colors';
-import w1 from './assets/w6.jpg';
 import search from './assets/search.png';
 import cross from './assets/cross.png';
 import setting from './assets/setting.png';
@@ -45,6 +44,8 @@ const Chat = () => {
             setRightVisible(!rightVisible);
         }
     };
+
+
     //making connection to websocket
     useEffect(() => {
         connectTOWs();
@@ -77,6 +78,7 @@ const Chat = () => {
 
     }, [selectedUser, id, onlinePeople, People, messages, newMessage]);
 
+const [nhk, setnhk] = useState(false);
     function handlemessage(e) {
         const messageData = JSON.parse(e.data);
 
@@ -88,64 +90,194 @@ const Chat = () => {
 
             if (isMessageForSelectedUser) {
                 setMessages(prevMessages => [...prevMessages, { ...messageData, isOur: false }]);
+                setnhk(prevnhk=>!prevnhk);
             }
 
         }
     }
-
-/* 
-    function sendMessage(e, file = null) {
-        if (e) e.preventDefault();
-        // Check if the newMessage is empty or contains only whitespace
-    if (!newMessage.trim()) {
-            // Do not send empty messages
-            return;
-        } 
-        const createdAt = new Date(); // Get the current time for createdAt
-        const day = createdAt.toLocaleDateString('en-US');
-        const time = createdAt.toLocaleTimeString('en-US');
-
-        // Send the message with the correct timestamps
-        ws.send(JSON.stringify({
-            day, // Set the day
-            time, // Set the time
-            recipient: selectedUser,
-            text: newMessage,
-            file,
-            isRead: false,
-            createdAt, // Set the createdAt timestamp
-
-        }));
-
-        setnewMessage('');
-        const newMessageData = {
-            day, // Set the day for the displayed message
-            time, // Set the time for the displayed message
-            text: newMessage,
-            sender: id,
-            isRead: false,
-            recipient: selectedUser,
-            _id: Date.now(),
-            isOur: true,
-            createdAt, // Set the createdAt timestamp for the displayed message
-
-        };
-
-        setMessages(prev => ([...prev, newMessageData]));
-        if (file) {
-            axios.get('/messages/' + selectedUser).then(res => {
-                setMessages(res.data);
-            });
-        }
-    }
- */
-    function sendMessage(e, file = null) {
-        if (e) e.preventDefault();
+    useEffect(() => {
+        setTimeout(() => {
+            if (selectedUser) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+            setTimeout(() => {
+                if (selectedUser) {
+                    axios.get('/messages/' + selectedUser).then(res => {
+                        setMessages(res.data);
+                    });
+                }
+            }, 1000);
+        }, 1000);
     
+    }, [nhk]);
+    
+
+    /* 
+        function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+            // Check if the newMessage is empty or contains only whitespace
+        if (!newMessage.trim()) {
+                // Do not send empty messages
+                return;
+            } 
+            const createdAt = new Date(); // Get the current time for createdAt
+            const day = createdAt.toLocaleDateString('en-US');
+            const time = createdAt.toLocaleTimeString('en-US');
+    
+            // Send the message with the correct timestamps
+            ws.send(JSON.stringify({
+                day, // Set the day
+                time, // Set the time
+                recipient: selectedUser,
+                text: newMessage,
+                file,
+                isRead: false,
+                createdAt, // Set the createdAt timestamp
+    
+            }));
+    
+            setnewMessage('');
+            const newMessageData = {
+                day, // Set the day for the displayed message
+                time, // Set the time for the displayed message
+                text: newMessage,
+                sender: id,
+                isRead: false,
+                recipient: selectedUser,
+                _id: Date.now(),
+                isOur: true,
+                createdAt, // Set the createdAt timestamp for the displayed message
+    
+            };
+    
+            setMessages(prev => ([...prev, newMessageData]));
+            if (file) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+        }
+     */
+    const [fllag, setfllag] = useState(false);
+
+
+        function sendMessage(e, file = null) {
+            if (e) e.preventDefault();
+        
+            const createdAt = new Date();
+            const day = createdAt.toLocaleDateString('en-US');
+            const time = createdAt.toLocaleTimeString('en-US');
+        
+            // Check if there is a file
+            if (file) {
+                // Send the file message
+                ws.send(JSON.stringify({
+                    day,
+                    time,
+                    recipient: selectedUser,
+                    file,
+                    isRead: false,
+                    createdAt,
+                }));
+        
+                // Update state and fetch messages if needed
+                setnewMessage('');
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+        
+                // Send the text message after a delay
+                setTimeout(() => {
+                    
+                    const textMessage = `${file.name}`;
+                    ws.send(JSON.stringify({
+                        day,
+                        time,
+                        recipient: selectedUser,
+                        text: textMessage,
+                        isRead: false,
+                        createdAt,
+                    }));
+                    setfllag(prevfllag=>!prevfllag);
+          
+                    // Update state with the new message data
+                    setMessages(prev => ([...prev, {
+                        day,
+                        time,
+                        text: textMessage,
+                        sender: id,
+                        isRead: false,
+                        recipient: selectedUser,
+                        _id: Date.now(),
+                        isOur: true,
+                        createdAt,
+                    }]));
+                }, 2000);
+        
+        
+            } else {
+                // Check if the newMessage is empty or contains only whitespace
+                if (!newMessage.trim()) {
+                    // Do not send empty messages
+                    return;
+                }
+        
+                // Send the text message with the correct timestamps
+                ws.send(JSON.stringify({
+                    day,
+                    time,
+                    recipient: selectedUser,
+                    text: newMessage,
+                    isRead: false,
+                    createdAt,
+                }));
+        
+                // Update state with the new message data
+                setnewMessage('');
+                const newMessageData = {
+                    day,
+                    time,
+                    text: newMessage,
+                    sender: id,
+                    isRead: false,
+                    recipient: selectedUser,
+                    _id: Date.now(),
+                    isOur: true,
+                    createdAt,
+                };
+        
+                setMessages(prev => ([...prev, newMessageData]));
+            }
+        }
+     
+        
+        function sendfile(e) {
+            const reader = new FileReader();
+            reader.readAsDataURL(e.target.files[0]);
+            reader.onload = () => {
+                sendMessage(null, {
+                    name: e.target.files[0].name,
+                    data: reader.result,
+                })
+            }
+            setTimeout(() => {
+                if (selectedUser) {
+                    axios.get('/messages/' + selectedUser).then(res => {
+                        setMessages(res.data);
+                    });
+                }
+            }, 1000);
+        
+        }/* 
+    function sendMessage(e, file = null) {
+        if (e) e.preventDefault();
+
         const createdAt = new Date();
         const day = createdAt.toLocaleDateString('en-US');
         const time = createdAt.toLocaleTimeString('en-US');
-    
+
         // Check if there is a file
         if (file) {
             // Send the message with the file
@@ -157,7 +289,7 @@ const Chat = () => {
                 isRead: false,
                 createdAt,
             }));
-    
+
             // Update state and fetch messages if needed
             setnewMessage('');
             axios.get('/messages/' + selectedUser).then(res => {
@@ -169,7 +301,7 @@ const Chat = () => {
                 // Do not send empty messages
                 return;
             }
-    
+
             // Send the message with the correct timestamps
             ws.send(JSON.stringify({
                 day,
@@ -179,7 +311,7 @@ const Chat = () => {
                 isRead: false,
                 createdAt,
             }));
-    
+
             // Update state with the new message data
             setnewMessage('');
             const newMessageData = {
@@ -193,11 +325,11 @@ const Chat = () => {
                 isOur: true,
                 createdAt,
             };
-    
+
             setMessages(prev => ([...prev, newMessageData]));
         }
     }
-    
+
 
     function sendfile(e) {
         const reader = new FileReader();
@@ -208,8 +340,8 @@ const Chat = () => {
                 data: reader.result,
             })
         }
-    }
-
+    } */
+    const [scrollonclick, setscrollonclick] = useState(false);
     //scroll to bottom
     useEffect(() => {
 
@@ -217,9 +349,7 @@ const Chat = () => {
         if (div) {
             div.scrollIntoView({ behaviour: 'smooth' });
         }
-
-
-    }, [messages]);
+    }, [messages,scrollonclick]);
 
     //get messages
     useEffect(() => {
@@ -278,7 +408,7 @@ const Chat = () => {
 
     const handleSearch = async (e) => {
         const term = e.target.value;
-        console.log(term);
+      
 
         setSearchTerm(term);
 
@@ -344,28 +474,28 @@ const Chat = () => {
     const [setuuser, setsetuuser] = useState("");
     /* *******************************************************************************************************
      */
-  
+
     const [showsettings, setshowsettings] = useState(false);
     const [showtheme, setshowtheme] = useState(false);
     const [showlogout, setshowlogout] = useState(false);
- /*    const [colortheme, setcolortheme] = useState("main_theme");
-    const allThemes = themes;
-      function settheme(theme){
-           
-            const final_theme=  "allThemes."+ theme;
-            setcolortheme(final_theme);
-    
-        }
+    /*    const [colortheme, setcolortheme] = useState("main_theme");
+       const allThemes = themes;
+         function settheme(theme){
+              
+               const final_theme=  "allThemes."+ theme;
+               setcolortheme(final_theme);
        
-        const lavenderTheme = allThemes.colortheme; */
-    
-        const [colortheme, setcolortheme] = useState("main_theme");
-        const allThemes = themes;
-        
-      
-        
-        const lavenderTheme = allThemes[colortheme];
-        
+           }
+          
+           const lavenderTheme = allThemes.colortheme; */
+
+    const [colortheme, setcolortheme] = useState("main_theme");
+    const allThemes = themes;
+
+
+
+    const lavenderTheme = allThemes[colortheme];
+
     return (
 
 
@@ -399,20 +529,20 @@ const Chat = () => {
                         <div className="italic text-[#d5d9db] font-bold text-[32px] text-center p-0 mt-[-20px]">Settings</div>
 
                         <ul className='p-4 text-[#d4e1e7] font-extrabold capitalize cursor-pointer text-[20px]'>
-                            <li  onClick={() => setshowtheme(!showtheme)} 
+                            <li onClick={() => setshowtheme(!showtheme)}
                                 className='border-b-[1px] border-[#bacad3]'>Themes</li>
                             {showtheme && (
                                 <ul className='p-4 text-[20px] font-extralight'>
-                                    <li onClick={()=> setcolortheme("main_theme")}
-                                     className='flex '><div className="flex justify-end h-[20px] w-[20px] rounded-full bg-[#364954] mt-0.5 mr-4 border-[2px]"></div>Default </li>
-                                    <li onClick={()=> setcolortheme("dark_theme")}
-                                     className='flex '><div className="flex justify-end h-[20px] w-[20px] border-[2px] rounded-full bg-black mt-0.5 mr-4 "></div>dark </li>
-                                    <li  onClick={()=> setcolortheme("lavender_theme")}
-                                    className='flex '><div className="flex justify-end h-[20px] w-[20px]  border-[2px] rounded-full bg-[#b794d2] mt-0.5 mr-4 "></div>lavender </li>
-                                    <li onClick={()=> setcolortheme("pink_theme")}
-                                    className='flex '><div className="flex justify-end h-[20px] w-[20px] border-[2px] rounded-full bg-[#9F004B] mt-0.5 mr-4 "></div>Rose Garnet </li>
-                                    <li onClick={()=> setcolortheme("blue_theme")}
-                                     className='flex '><div className="flex justify-end h-[20px] w-[20px]  border-[2px] rounded-full bg-[#2AB1A9] mt-0.5 mr-4 "></div>Light Sea Green </li>
+                                    <li onClick={() => setcolortheme("main_theme")}
+                                        className='flex '><div className="flex justify-end h-[20px] w-[20px] rounded-full bg-[#364954] mt-0.5 mr-4 border-[2px]"></div>Default </li>
+                                    <li onClick={() => setcolortheme("dark_theme")}
+                                        className='flex '><div className="flex justify-end h-[20px] w-[20px] border-[2px] rounded-full bg-black mt-0.5 mr-4 "></div>dark </li>
+                                    <li onClick={() => setcolortheme("lavender_theme")}
+                                        className='flex '><div className="flex justify-end h-[20px] w-[20px]  border-[2px] rounded-full bg-[#b794d2] mt-0.5 mr-4 "></div>lavender </li>
+                                    <li onClick={() => setcolortheme("pink_theme")}
+                                        className='flex '><div className="flex justify-end h-[20px] w-[20px] border-[2px] rounded-full bg-[#9F004B] mt-0.5 mr-4 "></div>Rose Garnet </li>
+                                    <li onClick={() => setcolortheme("blue_theme")}
+                                        className='flex '><div className="flex justify-end h-[20px] w-[20px]  border-[2px] rounded-full bg-[#2AB1A9] mt-0.5 mr-4 "></div>Light Sea Green </li>
 
                                 </ul>
                             )}
@@ -424,7 +554,7 @@ const Chat = () => {
                                     <div className="text-center   font-extralight text-[16px]  mt-4"> Are you sure you want to logout?</div>
                                     <div className="mt-4 flex flex-row justify-around">
                                         <div onClick={() => setshowlogout(false)}
-                                         className="bg-white p-3 rounded-2xl px-10 text-black ">no</div>
+                                            className="bg-white p-3 rounded-2xl px-10 text-black ">no</div>
                                         <div onClick={logout}
                                             className="bg-red-700 p-3 rounded-2xl px-10 ">yes</div>
                                     </div>
@@ -493,7 +623,7 @@ const Chat = () => {
                     {/* Display users and handle selection */}
                     {
                         Object.values(People).map((user) => (
-                            <div onClick={() => { setselectedUser(user._id); handleBackArrowClick(); }}
+                            <div onClick={() => { setselectedUser(user._id); handleBackArrowClick();setscrollonclick(prevscrollonclick=>!prevscrollonclick); }}
                                 key={user._id}
                                 className={`cursor-pointer flex flex-row overflow-hidden  my-1   h-11 font-bold px-4 py-2.5 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? `${lavenderTheme.username_theme_selected}` : `${lavenderTheme.username_theme_not_selected}`}`}
                             >

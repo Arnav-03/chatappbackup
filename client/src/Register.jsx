@@ -4,66 +4,31 @@ import { useContext } from 'react';
 import { useState } from 'react'
 import { UserContext } from './UserContext';
 import { useRef } from 'react';
-
-
-import w1 from './assets/w6.jpg';
 import back from './assets/back.png';
 
 const Register = () => {
-
-
-
     const { setusername: setLoggedInUsername, setid } = useContext(UserContext);
-
     const [username, setusername] = useState("");
     const [password, setpassword] = useState("");
     const [IsloginOrRegister, setIsloginOrRegister] = useState("login");
 
-    const [loginStatus, setLoginStatus] = useState(false); // Use boolean instead of an empty string
-    const [loginerror, setError] = useState(false); // Use boolean instead of an empty string
+    const [loginStatus, setLoginStatus] = useState(false);
+    const [loginerror, setError] = useState(false);
     const [show, setshow] = useState(true);
 
     const [errorMessage, setErrorMessage] = useState("");
 
-    /*      async function handlesubmit(e) {
-            e.preventDefault();
-            const url = IsloginOrRegister === "register" ? 'register' : 'login';
-    
-            let loginSuccess = false;
-    
-            try {
-                const { data } = await axios.post(`/${url}`, { username, password });
-                setLoggedInUsername(username);
-                setid(data.id);
-                loginSuccess = true;
-                console.log(error);
-            } catch (err) {
-                console.log(err);
-            }
-    
-            if (loginSuccess) {
-                setLoginStatus(true); // Set loginStatus to true when successfully logging in
-                setError(false); // No error when successful
-            } else {
-                setError(true); // Set error to true for invalid username or password
-                setLoginStatus(false); // Set loginStatus to false due to login failure
-            }
-        } */
-
-   
     async function handlesubmit(e) {
         e.preventDefault();
         const url = IsloginOrRegister === "register" ? 'register' : 'login';
-        
-  
-      if (IsloginOrRegister === "register") {
+        if (IsloginOrRegister === "register") {
             const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*[a-z]).{8,}$/;
 
             if (!passwordRegex.test(password)) {
                 setErrorMessage("Password must be at least 8 characters long, include at least one uppercase letter, and one special character.");
                 return;
             }
-        } 
+        }
         let loginSuccess = false;
 
         try {
@@ -78,9 +43,11 @@ const Register = () => {
 
         if (loginSuccess) {
             setLoginStatus(true);
-            setErrorMessage(""); // Reset error message on successful login
+            setErrorMessage("");
         }
     }
+
+
     const mainstyle = {
         fontFamily: "'Major Mono Display', monospace",
         display: 'flex',
@@ -88,7 +55,6 @@ const Register = () => {
         alignItems: 'center',
         justifyContent: 'center',
         textShadow: '3px 3px #05141b',
-
     }
 
     const textStyle = {
@@ -97,7 +63,6 @@ const Register = () => {
 
     const scrollRef = useRef(null);
 
-
     const handleButtonClick = () => {
         setshow(false);
         if (scrollRef.current) {
@@ -105,25 +70,19 @@ const Register = () => {
         }
     };
 
-
     return (
         <div className="">
-
-
             {show && (
                 <div className="flex  flex-col p-5 relative h-screen"
                     style={{
                         background: "#364954"
-
-                    }}
-                >
+                    }} >
 
                     <div style={mainstyle} className=" flex mt-[250px] tracking-in-expand  text-[#c6e8f3] text-[47px]   sm:text-6xl md:text-7xl lg:text-8xl"
                     >KASHITOKARU</div>
                     <div className="  text-[#13171a] font-bold text-[33px]  sm:text-4xl md:text-4xl lg:text-5xl text-center p-0 mt-[50px] " style={textStyle}>
                         The Art of Conversation,<br /> Redefined...
                     </div>
-                    {/*  text-[#13090a] */}
 
                     <div className='flex justify-end m-0 mt-[100px] mr-[20px] lg:mt-[2px] lg:mr-[150px]'>
                         <button class="button" onClick={handleButtonClick} >
@@ -137,7 +96,6 @@ const Register = () => {
 
             {!show && (
                 <div ref={scrollRef}
-
                     className=' h-screen  bg-[#DAF0EB]  p-0 m-0  flex flex-col  '>
                     <div className=""><img onClick={() => { setshow(true) }}
                         className='h-10 mt-[200px] ml-[20px] lg:ml-[400px]  cursor-pointer'
@@ -170,9 +128,7 @@ const Register = () => {
 
                                 </div>
                             )}
-
                         </div>
-
 
                     </form>
                     <div className="flex justify-center ">
@@ -184,21 +140,34 @@ const Register = () => {
                     </div>
                 </div>
             )}
-
-
-
-
-
-
-
-
-
-
-
-
         </div>
-
     )
 }
 
 export default Register
+
+
+/*      async function handlesubmit(e) {
+         e.preventDefault();
+         const url = IsloginOrRegister === "register" ? 'register' : 'login';
+ 
+         let loginSuccess = false;
+ 
+         try {
+             const { data } = await axios.post(`/${url}`, { username, password });
+             setLoggedInUsername(username);
+             setid(data.id);
+             loginSuccess = true;
+             console.log(error);
+         } catch (err) {
+             console.log(err);
+         }
+ 
+         if (loginSuccess) {
+             setLoginStatus(true); // Set loginStatus to true when successfully logging in
+             setError(false); // No error when successful
+         } else {
+             setError(true); // Set error to true for invalid username or password
+             setLoginStatus(false); // Set loginStatus to false due to login failure
+         }
+     } */
