@@ -105,6 +105,9 @@ const Chat = () => {
             }
         } */
 
+        const showPeople = (onlineData) => {
+        
+        };
     function handlemessage(e) {
         const messageData = JSON.parse(e.data);
 
@@ -470,8 +473,14 @@ const Chat = () => {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(`/api/messages/${selectedUser}`);
-                setMessages(response.data);
+                if(selectedUser==null)
+                {
+
+                }else{
+                    const response = await axios.get(`/messages/${selectedUser}`);
+                    setMessages(response.data);
+                }
+               
             } catch (error) {
                 console.error('Error fetching messages:', error.message);
             }
@@ -772,11 +781,11 @@ const Chat = () => {
                                 id=""
                                 className={`p-2 ${lavenderTheme.messagebox_border}  placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none `}
                             />
-                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2 px-3  mr-2 my-3 text-white rounded-lg`}>
+                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2 px-0.5   my-3 text-white rounded-lg`}>
                                 <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
                                 <img className="h-7" src={attach} alt="Send" />
                             </label>
-                            <button type='submit' className={`${lavenderTheme.sentbutton_color} p-2 px-4 m-3 text-white rounded-lg`}>
+                            <button type='submit' className={`${lavenderTheme.sentbutton_color} p-2 px-1.5 m-3 mx-0 text-white rounded-lg`}>
                                 <img className="h-7" src={sendbtn} alt="Send" />
                             </button>
                         </form>
