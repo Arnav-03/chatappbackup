@@ -10,7 +10,6 @@ const Message = require('./models/Message');
 const User = require('./models/User');
 const fs = require('fs');
 
-
 dotenv.config();
 
 mongoose.connect(process.env.MONGO_URL);
@@ -62,12 +61,23 @@ app.get('/api/messages/:userId', async (req, res) => {
     res.json(messages);
 
 });
+app.get('/api/lastmessage/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const userData = await getUserDataFromRequest(req);
+    const ourUserId = userData.userId;
 
+    const lastMessage = await Message
+        .find({
+            sender: { $in: [userId, ourUserId] },
+            recipient: { $in: [userId, ourUserId] },
+        })
+        .sort({ createdAt: -1 }) // Sort in descending order
+        .limit(1);
+        
 
-/* app.get('/api/people', async (req,res)=>{
-    const users = await User.find({},{'_id':1,'username':1});
-    res.json(users);
-}) */
+    res.json(lastMessage);
+});
+
 app.get('/api/people', async (req, res) => {
     try {
         const userData = await getUserDataFromRequest(req);
@@ -155,20 +165,7 @@ app.get('/api/profile', (req, res) => {
     }
 });
 
-/* app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    const foundUser = await User.findOne({ username });
-    if (foundUser) {
-        const passOk = bcrypt.compareSync(password, foundUser.password);
-        if (passOk) {
-            jwt.sign({ userId: foundUser._id, username }, jwtSecret, {}, (err, token) => {
-                res.cookie('token', token, { sameSite: 'none', secure: true }).json({
-                    id: foundUser._id,
-                })
-            });
-        }
-    }
-}); */
+
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const foundUser = await User.findOne({ username });
@@ -203,27 +200,7 @@ app.post('/api/logout', (req, res) => {
     res.cookie('token', '', { sameSite: 'none', secure: true }).json('logout');
 });
 
-/* 
-app.post('/api/register', async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
-        const createdUser = await User.create({
-            username: username,
-            password: hashedPassword,
-        });
 
-        jwt.sign({ userId: createdUser._id, username }, jwtSecret, {}, (err, token) => {
-            if (err) throw err;
-            res.cookie('token', token, { sameSite: 'none', secure: true }).status(201).json({
-                id: createdUser._id,
-            });
-        })
-    } catch (err) {
-        if (err) throw err;
-    }
-
-}); */
 async function checkUserExists(username) {
     try {
         const response = await axios.get(`/api/checkuser/${username}`);
@@ -317,10 +294,6 @@ wss.on('connection', (connection, req) => {
             filename = Date.now() + '.' + ext;
             const path = __dirname + '/uploads/' + filename;
 
-            /*        const path =  'uploads/' + filename;
-             */
-            /*         const bufferData = new Buffer(file.data.split(',')[1], 'base64');
-             */
             const bufferData = Buffer.from(file.data.split(',')[1], 'base64'); // Use Buffer.from() instead
 
             fs.writeFile(path, bufferData, (err) => {
@@ -331,7 +304,7 @@ wss.on('connection', (connection, req) => {
                 }
             });
         }
-
+    
         if (recipient && (text || file)) {
             const MessageDoc = await Message.create({
                 sender: connection.userId,

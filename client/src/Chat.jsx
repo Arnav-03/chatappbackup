@@ -14,7 +14,12 @@ import setting from './assets/setting.png';
 import account from './assets/account.png';
 import image from './assets/image.png';
 import file from './assets/file.png';
+import pdf from './assets/pdf.png';
+import excel from './assets/excel.png';
+import txt from './assets/txt.png';
+import doc from './assets/doc.png';
 import backarrow from './assets/backarrow.png';
+import ppt from './assets/ppt.png';
 
 const Chat = () => {
 
@@ -78,7 +83,28 @@ const Chat = () => {
 
     }, [selectedUser, id, onlinePeople, People, messages, newMessage]);
 
-const [nhk, setnhk] = useState(false);
+    const [nhk, setnhk] = useState(false);
+    /*     function handlemessage(e) {
+            const messageData = JSON.parse(e.data);
+    
+    
+            if (typeof messageData === 'object' && 'online' in messageData) {
+                showPeople(messageData.online);
+            } else if ('text' in messageData) {
+                const isMessageForSelectedUser = messageData.sender === selectedUser || messageData.recipient === selectedUser;
+    
+                if (isMessageForSelectedUser) {
+                    setMessages(prevMessages => [...prevMessages, { ...messageData, isOur: false }]);
+                    setnhk(prevnhk => !prevnhk);
+                    setTimeout(() => {
+                        setnhk(prevnhk => !prevnhk);
+    
+                    }, 1000);
+                }
+    
+            }
+        } */
+
     function handlemessage(e) {
         const messageData = JSON.parse(e.data);
 
@@ -90,7 +116,11 @@ const [nhk, setnhk] = useState(false);
 
             if (isMessageForSelectedUser) {
                 setMessages(prevMessages => [...prevMessages, { ...messageData, isOur: false }]);
-                setnhk(prevnhk=>!prevnhk);
+                setnhk(prevnhk => !prevnhk);
+                setTimeout(() => {
+                    setnhk(prevnhk => !prevnhk);
+
+                }, 1000);
             }
 
         }
@@ -109,168 +139,36 @@ const [nhk, setnhk] = useState(false);
                     });
                 }
             }, 1000);
-        }, 1000);
-    
-    }, [nhk]);
-    
-
-    /* 
-        function sendMessage(e, file = null) {
-            if (e) e.preventDefault();
-            // Check if the newMessage is empty or contains only whitespace
-        if (!newMessage.trim()) {
-                // Do not send empty messages
-                return;
-            } 
-            const createdAt = new Date(); // Get the current time for createdAt
-            const day = createdAt.toLocaleDateString('en-US');
-            const time = createdAt.toLocaleTimeString('en-US');
-    
-            // Send the message with the correct timestamps
-            ws.send(JSON.stringify({
-                day, // Set the day
-                time, // Set the time
-                recipient: selectedUser,
-                text: newMessage,
-                file,
-                isRead: false,
-                createdAt, // Set the createdAt timestamp
-    
-            }));
-    
-            setnewMessage('');
-            const newMessageData = {
-                day, // Set the day for the displayed message
-                time, // Set the time for the displayed message
-                text: newMessage,
-                sender: id,
-                isRead: false,
-                recipient: selectedUser,
-                _id: Date.now(),
-                isOur: true,
-                createdAt, // Set the createdAt timestamp for the displayed message
-    
-            };
-    
-            setMessages(prev => ([...prev, newMessageData]));
-            if (file) {
-                axios.get('/messages/' + selectedUser).then(res => {
-                    setMessages(res.data);
-                });
-            }
-        }
-     */
-    const [fllag, setfllag] = useState(false);
-
-
-        function sendMessage(e, file = null) {
-            if (e) e.preventDefault();
-        
-            const createdAt = new Date();
-            const day = createdAt.toLocaleDateString('en-US');
-            const time = createdAt.toLocaleTimeString('en-US');
-        
-            // Check if there is a file
-            if (file) {
-                // Send the file message
-                ws.send(JSON.stringify({
-                    day,
-                    time,
-                    recipient: selectedUser,
-                    file,
-                    isRead: false,
-                    createdAt,
-                }));
-        
-                // Update state and fetch messages if needed
-                setnewMessage('');
-                axios.get('/messages/' + selectedUser).then(res => {
-                    setMessages(res.data);
-                });
-        
-                // Send the text message after a delay
-                setTimeout(() => {
-                    
-                    const textMessage = `${file.name}`;
-                    ws.send(JSON.stringify({
-                        day,
-                        time,
-                        recipient: selectedUser,
-                        text: textMessage,
-                        isRead: false,
-                        createdAt,
-                    }));
-                    setfllag(prevfllag=>!prevfllag);
-          
-                    // Update state with the new message data
-                    setMessages(prev => ([...prev, {
-                        day,
-                        time,
-                        text: textMessage,
-                        sender: id,
-                        isRead: false,
-                        recipient: selectedUser,
-                        _id: Date.now(),
-                        isOur: true,
-                        createdAt,
-                    }]));
-                }, 2000);
-        
-        
-            } else {
-                // Check if the newMessage is empty or contains only whitespace
-                if (!newMessage.trim()) {
-                    // Do not send empty messages
-                    return;
-                }
-        
-                // Send the text message with the correct timestamps
-                ws.send(JSON.stringify({
-                    day,
-                    time,
-                    recipient: selectedUser,
-                    text: newMessage,
-                    isRead: false,
-                    createdAt,
-                }));
-        
-                // Update state with the new message data
-                setnewMessage('');
-                const newMessageData = {
-                    day,
-                    time,
-                    text: newMessage,
-                    sender: id,
-                    isRead: false,
-                    recipient: selectedUser,
-                    _id: Date.now(),
-                    isOur: true,
-                    createdAt,
-                };
-        
-                setMessages(prev => ([...prev, newMessageData]));
-            }
-        }
-     
-        
-        function sendfile(e) {
-            const reader = new FileReader();
-            reader.readAsDataURL(e.target.files[0]);
-            reader.onload = () => {
-                sendMessage(null, {
-                    name: e.target.files[0].name,
-                    data: reader.result,
-                })
-            }
             setTimeout(() => {
                 if (selectedUser) {
                     axios.get('/messages/' + selectedUser).then(res => {
                         setMessages(res.data);
                     });
                 }
-            }, 1000);
-        
-        }/* 
+            }, 500);
+        }, 1000);
+
+    }, [nhk]);
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (selectedUser) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                    // Reset unread messages count for the selected user
+                    setUnreadMessages(prevUnread => ({
+                        ...prevUnread,
+                        [selectedUser]: 0,
+                    }));
+                });
+            }
+        }, 1000);
+    }, [nhk]);
+
+
+    const [fllag, setfllag] = useState(false);
+
+
     function sendMessage(e, file = null) {
         if (e) e.preventDefault();
 
@@ -280,7 +178,7 @@ const [nhk, setnhk] = useState(false);
 
         // Check if there is a file
         if (file) {
-            // Send the message with the file
+            // Send the file message
             ws.send(JSON.stringify({
                 day,
                 time,
@@ -295,6 +193,39 @@ const [nhk, setnhk] = useState(false);
             axios.get('/messages/' + selectedUser).then(res => {
                 setMessages(res.data);
             });
+
+            // Send the text message after a delay
+            setTimeout(() => {
+
+                const textMessage = `${file.name}`;
+                ws.send(JSON.stringify({
+                    day,
+                    time,
+                    recipient: selectedUser,
+                    text: textMessage,
+                    isRead: false,
+                    createdAt,
+                }));
+                setnhk(prevnhk => !prevnhk);
+
+                // Update state with the new message data
+                setMessages(prev => ([...prev, {
+                    day,
+                    time,
+                    text: textMessage,
+                    sender: id,
+                    isRead: false,
+                    recipient: selectedUser,
+                    _id: Date.now(),
+                    isOur: true,
+                    createdAt,
+                }]));
+                setnhk(prevnhk => !prevnhk);
+
+            }, 2000);
+            setnhk(prevnhk => !prevnhk);
+
+
         } else {
             // Check if the newMessage is empty or contains only whitespace
             if (!newMessage.trim()) {
@@ -302,7 +233,7 @@ const [nhk, setnhk] = useState(false);
                 return;
             }
 
-            // Send the message with the correct timestamps
+            // Send the text message with the correct timestamps
             ws.send(JSON.stringify({
                 day,
                 time,
@@ -340,7 +271,15 @@ const [nhk, setnhk] = useState(false);
                 data: reader.result,
             })
         }
-    } */
+        setTimeout(() => {
+            if (selectedUser) {
+                axios.get('/messages/' + selectedUser).then(res => {
+                    setMessages(res.data);
+                });
+            }
+        }, 1000);
+
+    }
     const [scrollonclick, setscrollonclick] = useState(false);
     //scroll to bottom
     useEffect(() => {
@@ -349,7 +288,7 @@ const [nhk, setnhk] = useState(false);
         if (div) {
             div.scrollIntoView({ behaviour: 'smooth' });
         }
-    }, [messages,scrollonclick]);
+    }, [messages, scrollonclick]);
 
     //get messages
     useEffect(() => {
@@ -378,7 +317,7 @@ const [nhk, setnhk] = useState(false);
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
 
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
+        return ` ${hours}:${minutes}`;
     };
 
 
@@ -408,7 +347,7 @@ const [nhk, setnhk] = useState(false);
 
     const handleSearch = async (e) => {
         const term = e.target.value;
-      
+
 
         setSearchTerm(term);
 
@@ -478,16 +417,7 @@ const [nhk, setnhk] = useState(false);
     const [showsettings, setshowsettings] = useState(false);
     const [showtheme, setshowtheme] = useState(false);
     const [showlogout, setshowlogout] = useState(false);
-    /*    const [colortheme, setcolortheme] = useState("main_theme");
-       const allThemes = themes;
-         function settheme(theme){
-              
-               const final_theme=  "allThemes."+ theme;
-               setcolortheme(final_theme);
-       
-           }
-          
-           const lavenderTheme = allThemes.colortheme; */
+
 
     const [colortheme, setcolortheme] = useState("main_theme");
     const allThemes = themes;
@@ -496,22 +426,89 @@ const [nhk, setnhk] = useState(false);
 
     const lavenderTheme = allThemes[colortheme];
 
+    function getImageForFileType(file) {
+
+        if (file.endsWith('.pdf')) {
+            return pdf;
+        } else if (file.endsWith('.doc') || file.endsWith('.docx')) {
+            return doc;
+        } else if (file.endsWith('.txt')) {
+            return txt;
+        } else if (file.endsWith('.xls') || file.endsWith('.xlsx') || file.endsWith('.csv')) {
+            return excel;
+        } else if (file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png')) {
+            return image;
+        } else if (file.endsWith('.ppt') || file.endsWith('.pptx')) {
+            return ppt;
+        } else {
+            return file;
+        }
+    }
+
+
+    const [lastMessageTimes, setLastMessageTimes] = useState({});
+    const getLastMessageTime = async (userId) => {
+        try {
+            const ourUserId = 'yourLoggedInUserId'; // Replace with the actual logged-in user's ID
+            const response = await axios.get(`/messages/${userId}`);
+            const lastMessage = response.data.length > 0 ? response.data[response.data.length - 1] : null;
+
+            if (lastMessage) {
+                const { createdAt } = lastMessage;
+              /*   const messageTime = new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); */
+              const messageTime = new Date(createdAt).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+
+                return messageTime;
+            }
+        } catch (error) {
+            console.error('Error fetching last message time:', error.message);
+        }
+
+        return 'No messages';
+    };
+
+    useEffect(() => {
+        const fetchMessages = async () => {
+            try {
+                const response = await axios.get(`/api/messages/${selectedUser}`);
+                setMessages(response.data);
+            } catch (error) {
+                console.error('Error fetching messages:', error.message);
+            }
+        };
+
+        fetchMessages();
+    }, [selectedUser,People,messages]);
+
+    useEffect(() => {
+        const fetchLastMessageTimes = async () => {
+            const times = {};
+            for (const userId of Object.keys(People)) {
+                const time = await getLastMessageTime(userId);
+                times[userId] = time;
+            }
+            setLastMessageTimes(times);
+        };
+
+        fetchLastMessageTimes();
+    }, [People,messages,selectedUser]);
+
     return (
 
 
         <div className='flex h-screen '>
             <div style={{ background: lavenderTheme.left_color }}
 
-                className={` min-[320px] w-full  lg:w-1/3 md:w-1/3 h-full flex flex-col p-3 mb-10 ${leftVisible ? '' : 'hidden'}`}>
+                className={` min-[320px] w-full  lg:w-1/3 md:w-1/3 h-full flex flex-col p-1 mb-10 ${leftVisible ? '' : 'hidden'}`}>
                 <div style={{ background: lavenderTheme.title_color, color: lavenderTheme.left_color_text }}
 
                     className={`text-center  my-1  w-full p-1 mt-0 rounded-[10px] `}>
-                    <span style={textStyle} className=' mx-2 capitalize   text-2xl  md:text-lg lg:text-2xl xl:text-4xl tracking-[.16em]'>
+                    <span style={textStyle} className=' mx-2  capitalize   text-2xl  md:text-lg lg:text-2xl xl:text-4xl tracking-[.16em]'>
                         {username}
                     </span>
                 </div>
                 <div style={{ background: lavenderTheme.toolbox_theme }}
-                    className="  rounded-[10px] w-full m-2 ml-0 p-1 flex flex-row justify-around">
+                    className="  rounded-[10px] w-full m-2 ml-0 p-1  flex flex-row justify-around">
                     <img onClick={() => setshowsettings(true)}
                         className='h-[30px] mf:  cursor-pointer ' src={setting} alt="" />
                     <div className="text-white font-bold text-xl border-white cursor-pointer border-[2px] border-t-0 border-b-0 p-5 pt-0 pb-0">status</div>
@@ -618,14 +615,13 @@ const [nhk, setnhk] = useState(false);
 
                     </div>)}
                 </div>
-                <div
+                {/*       <div
                     className="overflow-y-auto mm-5 h-full">
-                    {/* Display users and handle selection */}
                     {
                         Object.values(People).map((user) => (
-                            <div onClick={() => { setselectedUser(user._id); handleBackArrowClick();setscrollonclick(prevscrollonclick=>!prevscrollonclick); }}
+                            <div onClick={() => { setselectedUser(user._id); handleBackArrowClick(); setscrollonclick(prevscrollonclick => !prevscrollonclick); }}
                                 key={user._id}
-                                className={`cursor-pointer flex flex-row overflow-hidden  my-1   h-11 font-bold px-4 py-2.5 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? `${lavenderTheme.username_theme_selected}` : `${lavenderTheme.username_theme_not_selected}`}`}
+                                className={`cursor-pointer flex flex-row overflow-hidden  my-1   h-11 font-bold px-3 py-2.5 text-lg  md:text-[15px] lg:text-xl  rounded-r-[10px] ${user._id === selectedUser ? `${lavenderTheme.username_theme_selected}` : `${lavenderTheme.username_theme_not_selected}`}`}
                             >
 
                                 <div
@@ -644,11 +640,40 @@ const [nhk, setnhk] = useState(false);
 
 
 
-                </div>
-                {/*  <div className="p-1 mt-4 text-center ">
-                    <button onClick={logout}
-                        className='bg-[#cf2626]  text-white font-bold p-2 rounded-lg'>Logout</button>
                 </div> */}
+
+                <div className="overflow-y-auto mm-5 h-full">
+                    {Object.values(People).map((user) => (
+                        <div
+                            onClick={() => {
+                                setselectedUser(user._id);
+                                handleBackArrowClick();
+                                setscrollonclick((prevscrollonclick) => !prevscrollonclick);
+                            }}
+                            key={user._id}
+                            className={`cursor-pointer flex flex-row overflow-hidden my-1 h-11 font-bold px-3 py-2.5 text-lg md:text-[15px] lg:text-xl rounded-r-[10px] ${user._id === selectedUser
+                                ? `${lavenderTheme.username_theme_selected}`
+                                : `${lavenderTheme.username_theme_not_selected}`
+                                }`}
+                        >
+                            <div
+                                className={`${user._id === selectedUser ? `${lavenderTheme.alphabet_theme_selected}` : `${lavenderTheme.alphabet_theme_not_selected}`} h-8 capitalize w-8 rounded-full px-1.5 py-0 mr-5 mt-[-5px] text-m text-center`}
+                            >
+                                {user.username[0]}
+                            </div>
+                            <div className="flex flex-row justify-between w-full">
+                                <div className="mt-[-3px] md:mt-[-5px]">
+                                    {user.username}
+                                </div>
+                                <div className="text-[12px] mt-[-3px] text-[#868b96]">
+                                    {lastMessageTimes[user._id]}
+                                </div>
+                            </div>
+
+                        </div>
+                    ))}
+                </div>
+
             </div>
 
             <div
@@ -698,23 +723,30 @@ const [nhk, setnhk] = useState(false);
                                                             <div className="underline text-center italic cursor-pointer">
                                                                 <a target='_blank' href={axios.defaults.baseURL + 'uploads/' + message.file + '?t=' + Date.now()}>
                                                                     <img
-                                                                        className='h-40 w-40 m-0 p-0 rounded-xl'
-                                                                        src={message.file.endsWith('.png') || message.file.endsWith('.jpg') || message.file.endsWith('.jpeg') ? image : file}
-                                                                        alt='cannot show!!!'
+                                                                        className='h-[100px] w-[100px] m-0 p-0  rounded-xl'
+                                                                        src={getImageForFileType(message.file)}
+
+/*                                                                         src={message.file.endsWith('.png') || message.file.endsWith('.jpg') || message.file.endsWith('.jpeg') ? image : file}
+ */                                                                        alt='cannot show!!!'
                                                                     />
-                                                                    <div className='text-[14px]'> {message.file} </div>
-                                                                </a>
+                                                                    {/*                                                                     <div className='text-[14px]'> {message.file} </div>
+ */}                                                                </a>
                                                             </div>
                                                         </div>
 
                                                     )}
+                                                    {!message.file && (
+                                                        <div>
+                                                            <div className="text-xs text-[#071b09] ">
+                                                                {formatTimestamp(message.createdAt) ? '' : (/* message.day && */ message.time ? ` ${message.time}` : /* (message.day = getCurrentTimestamp().day) && */ (message.time = getCurrentTimestamp().time))}
+                                                            </div>
 
-                                                    <div className="text-xs text-[#071b09] ">
-                                                        {formatTimestamp(message.createdAt) ? '' : (message.day && message.time ? `${message.day} ${message.time}` : (message.day = getCurrentTimestamp().day) && (message.time = getCurrentTimestamp().time))}
-                                                    </div>
-                                                    <div className="text-xs text-[#071b09] ">
-                                                        {formatTimestamp(message.createdAt)}
-                                                    </div>
+                                                            <div className="text-xs text-[#071b09] ">
+                                                                {formatTimestamp(message.createdAt)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
 
 
                                                 </div>
@@ -740,11 +772,11 @@ const [nhk, setnhk] = useState(false);
                                 id=""
                                 className={`p-2 ${lavenderTheme.messagebox_border}  placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none `}
                             />
-                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2  mr-2 my-3 text-white rounded-lg`}>
+                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2 px-3  mr-2 my-3 text-white rounded-lg`}>
                                 <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
                                 <img className="h-7" src={attach} alt="Send" />
                             </label>
-                            <button type='submit' className={`${lavenderTheme.sentbutton_color} p-2 px-3 m-3 text-white rounded-lg`}>
+                            <button type='submit' className={`${lavenderTheme.sentbutton_color} p-2 px-4 m-3 text-white rounded-lg`}>
                                 <img className="h-7" src={sendbtn} alt="Send" />
                             </button>
                         </form>
