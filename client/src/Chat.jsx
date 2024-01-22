@@ -472,15 +472,18 @@ const Chat = () => {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(`/api/messages/${selectedUser}`);
-                setMessages(response.data);
+                if(selectedUser!==null){
+                    const response = await axios.get(`/messages/${selectedUser}`);
+                    setMessages(response.data);
+                }
+            
             } catch (error) {
                 console.error('Error fetching messages:', error.message);
             }
         };
 
         fetchMessages();
-    }, [selectedUser,People,messages]);
+    }, [selectedUser]);
 
     useEffect(() => {
         const fetchLastMessageTimes = async () => {
