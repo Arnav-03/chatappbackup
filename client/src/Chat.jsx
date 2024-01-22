@@ -104,10 +104,10 @@ const Chat = () => {
     
             }
         } */
-
         const showPeople = (onlineData) => {
-        
+            
         };
+    
     function handlemessage(e) {
         const messageData = JSON.parse(e.data);
 
@@ -473,21 +473,18 @@ const Chat = () => {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                if(selectedUser==null)
-                {
-
-                }else{
+                if(selectedUser!== null){
                     const response = await axios.get(`/messages/${selectedUser}`);
                     setMessages(response.data);
                 }
-               
+              
             } catch (error) {
                 console.error('Error fetching messages:', error.message);
             }
         };
 
         fetchMessages();
-    }, [selectedUser,People,messages]);
+    }, [selectedUser,People]);
 
     useEffect(() => {
         const fetchLastMessageTimes = async () => {
@@ -781,7 +778,7 @@ const Chat = () => {
                                 id=""
                                 className={`p-2 ${lavenderTheme.messagebox_border}  placeholder-black  m-3 border-2 flex-grow rounded-lg outline-none `}
                             />
-                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2 px-0.5   my-3 text-white rounded-lg`}>
+                            <label className={` ${lavenderTheme.attach_color} cursor-pointer p-2 px-0.5 my-3 text-white rounded-lg`}>
                                 <input type='file' className='hidden outline-none bg-transparent placeholder-slate-800' onChange={sendfile} />
                                 <img className="h-7" src={attach} alt="Send" />
                             </label>
