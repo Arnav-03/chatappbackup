@@ -497,7 +497,7 @@ const Chat = () => {
         };
 
         fetchLastMessageTimes();
-    }, [People,messages,selectedUser]);
+    }, [People,selectedUser]);
 
     return (
 
