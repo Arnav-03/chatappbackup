@@ -782,7 +782,7 @@ const Chat = () => {
                                 <img className="h-7" src={attach} alt="Send" />
                             </label>
                             <button type='submit' className={`${lavenderTheme.sentbutton_color} p-2 px-1.5 m-3 mx-0 text-white rounded-lg`}>
-                                <img className="h-7" src={sendbtn} alt="Send" />
+                                <img className="h-7" src={sendbtn} alt="Sen" />
                             </button>
                         </form>
                     </div>
