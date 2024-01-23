@@ -119,6 +119,7 @@ app.get('/api/people', async (req, res) => {
     }
 });
 
+            // Use a regular expression to perform a case-insensitive search for starting letters only
 
 
 app.get('/api/allpeople', async (req, res) => {
