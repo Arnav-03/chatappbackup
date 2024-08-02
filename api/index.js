@@ -1,5 +1,6 @@
-const express = require("express");
 const dotenv = require("dotenv");
+require('dotenv').config()
+const express = require("express");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const cors = require('cors')
@@ -9,9 +10,6 @@ const ws = require("ws");
 const Message = require('./models/Message');
 const User = require('./models/User');
 const fs = require('fs');
-
-dotenv.config();
-
 mongoose.connect(process.env.MONGO_URL);
 
 const jwtSecret = process.env.JWT_SECRET;
